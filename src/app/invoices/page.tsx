@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { useState } from 'react';
@@ -122,7 +121,7 @@ export default function InvoicesPage() {
                     <Input id="invNum" value={newInvoice.invoiceNumber} onChange={e => setNewInvoice({...newInvoice, invoiceNumber: e.target.value})} />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="amount">Amount ($)</Label>
+                    <Label htmlFor="amount">Amount (GHS)</Label>
                     <Input id="amount" type="number" step="0.01" required value={newInvoice.amount} onChange={e => setNewInvoice({...newInvoice, amount: parseFloat(e.target.value)})} />
                   </div>
                 </div>
@@ -188,7 +187,7 @@ export default function InvoicesPage() {
                   </TableCell>
                   <TableCell className="font-medium">{getClientName(payment.clientId)}</TableCell>
                   <TableCell className="max-w-[200px] truncate text-sm">{payment.description}</TableCell>
-                  <TableCell className="font-bold">${payment.amount.toLocaleString()}</TableCell>
+                  <TableCell className="font-bold">GHS {payment.amount.toLocaleString()}</TableCell>
                   <TableCell>
                     <Badge className={cn(
                       "font-bold text-[10px]",
@@ -278,7 +277,7 @@ export default function InvoicesPage() {
                   </div>
                   <div className="flex justify-between items-center p-4 bg-muted/20 rounded-xl">
                     <span className="text-sm font-semibold">{selectedPayment.description}</span>
-                    <span className="font-black">${selectedPayment.amount.toLocaleString()}</span>
+                    <span className="font-black">GHS {selectedPayment.amount.toLocaleString()}</span>
                   </div>
                 </div>
 
@@ -291,7 +290,7 @@ export default function InvoicesPage() {
                   </div>
                   <div className="text-right">
                     <p className="text-xs text-muted-foreground">Total Transaction Value</p>
-                    <p className="text-3xl font-black text-primary">${selectedPayment.amount.toLocaleString()}</p>
+                    <p className="text-3xl font-black text-primary">GHS {selectedPayment.amount.toLocaleString()}</p>
                   </div>
                 </div>
 

@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { useState, useEffect, useMemo } from 'react';
@@ -53,7 +52,7 @@ export default function Dashboard() {
     { label: 'Total Clients', value: data.clients.length, icon: Users, trend: '+2 this month', color: 'text-primary' },
     { label: 'Active Websites', value: data.websites.length, icon: Globe, trend: 'All systems live', color: 'text-emerald-500' },
     { label: 'Completed Tasks', value: data.tasks.filter(t => t.status === 'Completed').length, icon: CheckSquare, trend: `${data.tasks.filter(t => t.status !== 'Completed').length} pending`, color: 'text-violet-500' },
-    { label: 'Total Revenue', value: `$${totalRevenue.toLocaleString()}`, icon: CreditCard, trend: `+$${pendingRevenue.toLocaleString()} pending`, color: 'text-amber-500' },
+    { label: 'Total Revenue', value: `GHS ${totalRevenue.toLocaleString()}`, icon: CreditCard, trend: `+GHS ${pendingRevenue.toLocaleString()} pending`, color: 'text-amber-500' },
   ];
 
   const chartData = [
@@ -86,7 +85,7 @@ export default function Dashboard() {
     if (soonExpiring > 0) {
       return `Good job! All invoices are paid. However, ${soonExpiring} domains are expiring within 30 days. Let's start the renewal process.`;
     }
-    return `Revenue is holding steady at $${totalRevenue.toLocaleString()}. You're doing great! Your next goal could be increasing your client base by 10%.`;
+    return `Revenue is holding steady at GHS ${totalRevenue.toLocaleString()}. You're doing great! Your next goal could be increasing your client base by 10%.`;
   }, [data, totalRevenue]);
 
   return (
