@@ -4,34 +4,34 @@
 
 @layer base {
   :root {
-    --background: 197 24% 94%;
-    --foreground: 222 47% 11%;
-    --card: 0 0% 100%;
-    --card-foreground: 222 47% 11%;
-    --popover: 0 0% 100%;
-    --popover-foreground: 222 47% 11%;
-    --primary: 202 30% 41%;
+    --background: 224 71% 4%;
+    --foreground: 213 31% 91%;
+    --card: 224 71% 4%;
+    --card-foreground: 213 31% 91%;
+    --popover: 224 71% 4%;
+    --popover-foreground: 215 20.2% 65.1%;
+    --primary: 263.4 70% 50.4%;
     --primary-foreground: 210 40% 98%;
-    --secondary: 210 40% 96.1%;
-    --secondary-foreground: 222 47% 11.2%;
-    --muted: 210 40% 96.1%;
-    --muted-foreground: 215.4 16.3% 46.9%;
-    --accent: 240 66% 71%;
-    --accent-foreground: 222 47% 11%;
-    --destructive: 0 84.2% 60.2%;
+    --secondary: 222.2 47.4% 11.2%;
+    --secondary-foreground: 210 40% 98%;
+    --muted: 223 47% 11%;
+    --muted-foreground: 215.4 16.3% 56.9%;
+    --accent: 216 34% 17%;
+    --accent-foreground: 210 40% 98%;
+    --destructive: 0 62.8% 30.6%;
     --destructive-foreground: 210 40% 98%;
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
-    --ring: 202 30% 41%;
-    --radius: 0.75rem;
-    --sidebar-background: 0 0% 100%;
-    --sidebar-foreground: 222 47% 11%;
-    --sidebar-primary: 202 30% 41%;
+    --border: 216 34% 17%;
+    --input: 216 34% 17%;
+    --ring: 263.4 70% 50.4%;
+    --radius: 1rem;
+    --sidebar-background: 224 71% 2%;
+    --sidebar-foreground: 213 31% 91%;
+    --sidebar-primary: 263.4 70% 50.4%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 210 40% 96.1%;
-    --sidebar-accent-foreground: 222 47% 11%;
-    --sidebar-border: 214.3 31.8% 91.4%;
-    --sidebar-ring: 202 30% 41%;
+    --sidebar-accent: 216 34% 17%;
+    --sidebar-accent-foreground: 213 31% 91%;
+    --sidebar-border: 216 34% 17%;
+    --sidebar-ring: 263.4 70% 50.4%;
   }
 }
 
@@ -40,17 +40,20 @@
     @apply border-border;
   }
   body {
-    @apply bg-background text-foreground font-body;
+    @apply bg-background text-foreground font-body selection:bg-primary/30;
   }
 }
 
 .glass-morphism {
-  @apply bg-white/70 backdrop-blur-md border border-white/20 shadow-xl;
+  @apply bg-black/40 backdrop-blur-xl border border-white/10 shadow-2xl;
 }
 
-.typing-animation::after {
-  content: '|';
-  animation: blink 1s step-end infinite;
+.premium-card {
+  @apply bg-gradient-to-br from-white/[0.05] to-transparent border border-white/10 shadow-lg hover:shadow-primary/5 transition-all duration-300;
+}
+
+.premium-button {
+  @apply shadow-[0_0_15px_rgba(139,92,246,0.3)] hover:shadow-[0_0_25px_rgba(139,92,246,0.5)] transition-all duration-300;
 }
 
 @keyframes blink {

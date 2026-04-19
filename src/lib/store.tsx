@@ -3,6 +3,7 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { AppData, Client, Website, Credential, Task, Reminder } from './types';
 import { INITIAL_DATA } from './mock-data';
+import { useToast } from '@/hooks/use-toast';
 
 interface AppContextType {
   data: AppData;
@@ -15,23 +16,42 @@ interface AppContextType {
   updateTask: (id: string, status: Task['status']) => void;
   exportData: () => void;
   importData: (jsonData: string) => void;
-  resetData: () => void;
+  resetData: (silent?: boolean) => void;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
 
+const EXPIRY_TIME = 10 * 60 * 1000; // 10 minutes in milliseconds
+
 export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [data, setData] = useState<AppData>(INITIAL_DATA);
   const [isInitialized, setIsInitialized] = useState(false);
+  const { toast } = useToast();
+
+  const updateActivityTimestamp = () => {
+    localStorage.setItem('devdash_last_activity', Date.now().toString());
+  };
 
   useEffect(() => {
     const saved = localStorage.getItem('devdash_data');
-    if (saved) {
-      try {
-        setData(JSON.parse(saved));
-      } catch (e) {
-        console.error("Failed to load local data", e);
+    const lastActivity = localStorage.getItem('devdash_last_activity');
+    const now = Date.now();
+
+    if (saved && lastActivity) {
+      const timeDiff = now - parseInt(lastActivity);
+      if (timeDiff > EXPIRY_TIME) {
+        console.log("Session expired. Resetting demo data.");
+        setData(INITIAL_DATA);
+        updateActivityTimestamp();
+      } else {
+        try {
+          setData(JSON.parse(saved));
+        } catch (e) {
+          console.error("Failed to load local data", e);
+        }
       }
+    } else {
+      updateActivityTimestamp();
     }
     setIsInitialized(true);
   }, []);
@@ -39,6 +59,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   useEffect(() => {
     if (isInitialized) {
       localStorage.setItem('devdash_data', JSON.stringify(data));
+      updateActivityTimestamp();
     }
   }, [data, isInitialized]);
 
@@ -49,6 +70,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       createdAt: new Date().toISOString().split('T')[0]
     };
     setData(prev => ({ ...prev, clients: [...prev.clients, newClient] }));
+    toast({ title: "Client Created", description: `${client.businessName} has been added.` });
   };
 
   const updateClient = (id: string, client: Partial<Client>) => {
@@ -56,6 +78,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       ...prev,
       clients: prev.clients.map(c => c.id === id ? { ...c, ...client } : c)
     }));
+    toast({ title: "Client Updated", description: "The client profile has been saved." });
   };
 
   const deleteClient = (id: string) => {
@@ -66,6 +89,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       credentials: prev.credentials.filter(cr => cr.clientId !== id),
       tasks: prev.tasks.filter(t => t.clientId !== id)
     }));
+    toast({ title: "Client Deleted", description: "The client and all associated data were removed." });
   };
 
   const addWebsite = (website: Omit<Website, 'id'>) => {
@@ -74,6 +98,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       id: Math.random().toString(36).substr(2, 9)
     };
     setData(prev => ({ ...prev, websites: [...prev.websites, newWebsite] }));
+    toast({ title: "Project Added", description: `Website ${website.domainName} registered.` });
   };
 
   const addCredential = (credential: Omit<Credential, 'id'>) => {
@@ -83,6 +108,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       password: btoa(credential.password) // Simulated encryption
     };
     setData(prev => ({ ...prev, credentials: [...prev.credentials, newCredential] }));
+    toast({ title: "Credential Secured", description: "Login details stored in the vault." });
   };
 
   const addTask = (task: Omit<Task, 'id'>) => {
@@ -91,6 +117,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       id: Math.random().toString(36).substr(2, 9)
     };
     setData(prev => ({ ...prev, tasks: [...prev.tasks, newTask] }));
+    toast({ title: "Task Created", description: "The action item has been added to your list." });
   };
 
   const updateTask = (id: string, status: Task['status']) => {
@@ -113,14 +140,17 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     try {
       const parsed = JSON.parse(jsonData);
       setData(parsed);
+      toast({ title: "Data Imported", description: "Application state has been restored." });
     } catch (e) {
-      alert("Invalid JSON format");
+      toast({ variant: "destructive", title: "Import Failed", description: "Invalid JSON format." });
     }
   };
 
-  const resetData = () => {
-    if (confirm("Reset all data to sample data?")) {
+  const resetData = (silent = false) => {
+    if (silent || confirm("Reset all data to sample data?")) {
       setData(INITIAL_DATA);
+      updateActivityTimestamp();
+      if (!silent) toast({ title: "Demo Reset", description: "The dashboard has been restored to factory settings." });
     }
   };
 
