@@ -19,7 +19,13 @@ export async function fetchAllData(): Promise<AppData> {
     credentials,
     tasks,
     reminders,
-    payments: payments.map(p => ({ ...p, createdAt: p.createdAt.toISOString() })),
+    payments: payments.map(p => ({ 
+      ...p, 
+      paymentDate: p.paymentDate || '',
+      description: p.description || '',
+      invoiceNumber: p.invoiceNumber || '',
+      createdAt: p.createdAt.toISOString() 
+    })),
   };
 }
 
@@ -42,8 +48,13 @@ export async function updateClientAction(id: string, data: Partial<Client>) {
   return prisma.client.update({
     where: { id },
     data: {
-      ...data,
-      id: undefined,
+      name: data.name,
+      businessName: data.businessName,
+      phone: data.phone,
+      email: data.email,
+      location: data.location,
+      avatarUrl: data.avatarUrl,
+      notes: data.notes,
     }
   });
 }
@@ -74,7 +85,7 @@ export async function createCredential(data: Partial<Credential>) {
   return prisma.credential.create({
     data: {
       clientId: data.clientId!,
-      serviceName: data.serviceName!,
+      type: data.type!,
       username: data.username!,
       password: Buffer.from(data.password || '').toString('base64'),
       url: data.url,
@@ -124,7 +135,9 @@ export async function createPayment(data: Partial<Payment>) {
       clientId: data.clientId!,
       amount: data.amount!,
       status: data.status!,
-      date: data.date!,
+      paymentDate: data.paymentDate!,
+      description: data.description || null,
+      invoiceNumber: data.invoiceNumber || null,
     }
   });
 }
@@ -132,7 +145,13 @@ export async function createPayment(data: Partial<Payment>) {
 export async function updatePaymentAction(id: string, updates: Partial<Payment>) {
   return prisma.payment.update({
     where: { id },
-    data: { ...updates, id: undefined }
+    data: {
+      amount: updates.amount,
+      status: updates.status,
+      paymentDate: updates.paymentDate,
+      description: updates.description,
+      invoiceNumber: updates.invoiceNumber,
+    }
   });
 }
 

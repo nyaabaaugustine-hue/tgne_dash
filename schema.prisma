@@ -42,7 +42,7 @@ model Credential {
   id          String @id @default(cuid())
   clientId    String
   client      Client @relation(fields: [clientId], references: [id], onDelete: Cascade)
-  serviceName String
+  type        String
   username    String
   password    String
   url         String?
@@ -67,11 +67,13 @@ model Reminder {
 }
 
 model Payment {
-  id        String   @id @default(cuid())
-  clientId  String
-  client    Client   @relation(fields: [clientId], references: [id], onDelete: Cascade)
-  amount    Float
-  status    String
-  date      String
-  createdAt DateTime @default(now())
+  id             String   @id @default(cuid())
+  clientId       String
+  client         Client   @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  amount         Float
+  status         String
+  paymentDate    String
+  description   String?
+  invoiceNumber String?
+  createdAt     DateTime @default(now())
 }
