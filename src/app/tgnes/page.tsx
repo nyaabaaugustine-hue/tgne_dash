@@ -97,7 +97,7 @@ export default function AdminPinPage() {
               <ShieldCheck size={16} />
             </div>
           </div>
-        <h1 className="text-5xl font-black tracking-tighter text-black text-center drop-shadow-2xl">
+        <h1 className="text-5xl font-black tracking-tighter text-white text-center drop-shadow-2xl">
             TGNE <span className="text-primary italic">CORE</span>
           </h1>
         <div className="flex items-center gap-2 mt-4 px-4 py-1.5 rounded-full bg-white/5 border border-white/10 backdrop-blur-md">

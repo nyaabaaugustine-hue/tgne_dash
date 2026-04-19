@@ -23,7 +23,7 @@ export function AIChat({ open, onClose }: { open: boolean, onClose: () => void }
   const [input, setInput] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
-  const { addTask } = useApp();
+  const { addTask, data } = useApp();
 
   useEffect(() => {
     if (scrollRef.current) {
@@ -47,12 +47,22 @@ export function AIChat({ open, onClose }: { open: boolean, onClose: () => void }
       const actionResult = await aiActionExecution({ query: userQuery });
       
       if (actionResult.actionType === 'addTask' && actionResult.taskDescription) {
-        addTask({
-          clientId: 'c1',
-          description: actionResult.taskDescription,
-          status: 'Pending',
-          dueDate: actionResult.dueDate || new Date().toISOString().split('T')[0]
-        });
+        // Find client by name if provided, otherwise use first available client
+        const matchedClient = actionResult.clientName
+          ? data.clients.find(c =>
+              c.name.toLowerCase().includes(actionResult.clientName!.toLowerCase()) ||
+              c.businessName.toLowerCase().includes(actionResult.clientName!.toLowerCase())
+            )
+          : data.clients[0];
+
+        if (matchedClient) {
+          addTask({
+            clientId: matchedClient.id,
+            description: actionResult.taskDescription,
+            status: 'Pending',
+            dueDate: actionResult.dueDate || new Date().toISOString().split('T')[0]
+          });
+        }
       }
 
       setMessages(prev => prev.filter(m => !m.isTyping).concat({ role: 'assistant', content: response.message }));

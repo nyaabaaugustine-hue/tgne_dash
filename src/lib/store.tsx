@@ -1,9 +1,10 @@
 "use client";
 
-import React, { createContext, useContext, useState, useEffect, useMemo } from 'react';
+import React, { createContext, useContext, useState, useEffect } from 'react';
 import { AppData, Client, Website, Credential, Task, Reminder, Payment } from './types';
 import { useRouter } from 'next/navigation';
 import * as actions from '@/lib/actions';
+import { toast } from '@/hooks/use-toast';
 
 interface AppContextType {
   data: AppData;
@@ -54,6 +55,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         setData(result);
       } catch (error) {
         console.error("Failed to load dashboard data:", error);
+        toast({
+          variant: 'destructive',
+          title: 'Connection Error',
+          description: 'Could not load data from the database. Check your connection.',
+        });
       } finally {
         setIsLoading(false);
       }
@@ -82,12 +88,21 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setData(updated);
   };
 
+  const handleError = (context: string, error: unknown) => {
+    console.error(`Persistence Error (${context}):`, error);
+    toast({
+      variant: 'destructive',
+      title: 'Save Failed',
+      description: `Could not complete "${context}". Please try again.`,
+    });
+  };
+
   const addClient = async (client: Partial<Client>) => {
     try {
       await actions.createClient(client);
       await refreshData();
     } catch (error) {
-      console.error("Persistence Error (addClient):", error);
+      handleError('addClient', error);
     }
   };
 
@@ -96,7 +111,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       await actions.updateClientAction(id, client);
       await refreshData();
     } catch (error) {
-      console.error("Persistence Error (updateClient):", error);
+      handleError('updateClient', error);
     }
   };
 
@@ -105,7 +120,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       await actions.deleteClientAction(id);
       await refreshData();
     } catch (error) {
-      console.error("Persistence Error (deleteClient):", error);
+      handleError('deleteClient', error);
     }
   };
 
@@ -114,7 +129,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       await actions.createWebsite(website);
       await refreshData();
     } catch (error) {
-      console.error("Persistence Error (addWebsite):", error);
+      handleError('addWebsite', error);
     }
   };
 
@@ -123,7 +138,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       await actions.createCredential(credential);
       await refreshData();
     } catch (error) {
-      console.error("Persistence Error (addCredential):", error);
+      handleError('addCredential', error);
     }
   };
 
@@ -132,7 +147,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       await actions.createTask(task);
       await refreshData();
     } catch (error) {
-      console.error("Persistence Error (addTask):", error);
+      handleError('addTask', error);
     }
   };
 
@@ -141,7 +156,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       await actions.updateTaskAction(id, status);
       await refreshData();
     } catch (error) {
-      console.error("Persistence Error (updateTask):", error);
+      handleError('updateTask', error);
     }
   };
 
@@ -150,7 +165,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       await actions.createReminder(reminder);
       await refreshData();
     } catch (error) {
-      console.error("Persistence Error (addReminder):", error);
+      handleError('addReminder', error);
     }
   };
 
@@ -159,7 +174,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       await actions.deleteReminderAction(id);
       await refreshData();
     } catch (error) {
-      console.error("Persistence Error (deleteReminder):", error);
+      handleError('deleteReminder', error);
     }
   };
 
@@ -168,7 +183,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       await actions.createPayment(payment);
       await refreshData();
     } catch (error) {
-      console.error("Persistence Error (addPayment):", error);
+      handleError('addPayment', error);
     }
   };
 
@@ -177,7 +192,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       await actions.updatePaymentAction(id, updates);
       await refreshData();
     } catch (error) {
-      console.error("Persistence Error (updatePayment):", error);
+      handleError('updatePayment', error);
     }
   };
 
@@ -186,7 +201,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       await actions.deletePaymentAction(id);
       await refreshData();
     } catch (error) {
-      console.error("Persistence Error (deletePayment):", error);
+      handleError('deletePayment', error);
     }
   };
 

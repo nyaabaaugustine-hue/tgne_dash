@@ -9,6 +9,7 @@ const nextConfig: NextConfig = {
     ignoreDuringBuilds: true,
   },
   images: {
+    dangerouslyAllowSVG: true,
     remotePatterns: [
       {
         protocol: 'https',
@@ -35,6 +36,8 @@ const nextConfig: NextConfig = {
         pathname: '/**',
       },
     ],
+    // Allow base64 data URIs for client avatar uploads
+    unoptimized: false,
   },
 };
 

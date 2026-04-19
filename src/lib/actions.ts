@@ -14,17 +14,47 @@ export async function fetchAllData(): Promise<AppData> {
   ]);
 
   return {
-    clients: clients.map(c => ({ ...c, createdAt: c.createdAt.toISOString(), updatedAt: c.updatedAt.toISOString() })),
-    websites: websites.map(w => ({ ...w, dateCreated: w.dateCreated?.toISOString(), expiryDate: w.expiryDate?.toISOString() })),
-    credentials,
-    tasks,
-    reminders,
-    payments: payments.map(p => ({ 
-      ...p, 
+    clients: clients.map(c => ({
+      ...c,
+      phone: c.phone ?? undefined,
+      email: c.email ?? undefined,
+      location: c.location ?? '',
+      avatarUrl: c.avatarUrl ?? undefined,
+      notes: c.notes ?? undefined,
+      createdAt: c.createdAt.toISOString(),
+      updatedAt: c.updatedAt.toISOString(),
+    })),
+    websites: websites.map(w => ({
+      ...w,
+      url: w.url ?? '',
+      hostingProvider: w.hostingProvider ?? '',
+      platform: (w.platform as Website['platform']) ?? 'Other',
+      projectPrice: w.projectPrice ?? 0,
+      paymentStatus: (w.paymentStatus as Website['paymentStatus']) ?? 'Unpaid',
+      dateCreated: w.dateCreated?.toISOString() ?? '',
+      expiryDate: w.expiryDate?.toISOString() ?? undefined,
+    })),
+    credentials: credentials.map(c => ({
+      ...c,
+      type: c.type as Credential['type'],
+      url: c.url ?? undefined,
+    })),
+    tasks: tasks.map(t => ({
+      ...t,
+      status: (t.status as Task['status']) ?? 'Pending',
+      dueDate: t.dueDate ?? '',
+    })),
+    reminders: reminders.map(r => ({
+      ...r,
+      type: r.type as Reminder['type'],
+      details: r.details ?? '',
+    })),
+    payments: payments.map(p => ({
+      ...p,
       paymentDate: p.paymentDate || '',
       description: p.description || '',
       invoiceNumber: p.invoiceNumber || '',
-      createdAt: p.createdAt.toISOString() 
+      createdAt: p.createdAt.toISOString(),
     })),
   };
 }
@@ -69,11 +99,11 @@ export async function createWebsite(data: Partial<Website>) {
     data: {
       clientId: data.clientId!,
       domainName: data.domainName!,
-      url: data.url,
-      hostingProvider: data.hostingProvider,
-      platform: data.platform,
-      projectPrice: data.projectPrice,
-      paymentStatus: data.paymentStatus,
+      url: data.url ?? null,
+      hostingProvider: data.hostingProvider ?? null,
+      platform: data.platform ?? null,
+      projectPrice: data.projectPrice ?? null,
+      paymentStatus: data.paymentStatus ?? null,
       dateCreated: data.dateCreated ? new Date(data.dateCreated) : null,
       expiryDate: data.expiryDate ? new Date(data.expiryDate) : null,
     }
@@ -88,7 +118,7 @@ export async function createCredential(data: Partial<Credential>) {
       type: data.type!,
       username: data.username!,
       password: Buffer.from(data.password || '').toString('base64'),
-      url: data.url,
+      url: data.url ?? null,
     }
   });
 }
@@ -119,7 +149,7 @@ export async function createReminder(data: Partial<Reminder>) {
       type: data.type!,
       title: data.title!,
       date: data.date!,
-      details: data.details,
+      details: data.details ?? null,
     }
   });
 }
@@ -146,11 +176,11 @@ export async function updatePaymentAction(id: string, updates: Partial<Payment>)
   return prisma.payment.update({
     where: { id },
     data: {
-      amount: updates.amount,
-      status: updates.status,
-      paymentDate: updates.paymentDate,
-      description: updates.description,
-      invoiceNumber: updates.invoiceNumber,
+      ...(updates.amount !== undefined && { amount: updates.amount }),
+      ...(updates.status !== undefined && { status: updates.status }),
+      ...(updates.paymentDate !== undefined && { paymentDate: updates.paymentDate }),
+      ...(updates.description !== undefined && { description: updates.description }),
+      ...(updates.invoiceNumber !== undefined && { invoiceNumber: updates.invoiceNumber }),
     }
   });
 }

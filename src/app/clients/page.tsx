@@ -69,10 +69,25 @@ export default function ClientsPage() {
     avatarUrl: ''
   });
 
+  const isDataUrl = (src: string) => src.startsWith('data:');
+
+  const ClientImage = ({ src, alt, fill, className }: { src: string; alt: string; fill?: boolean; className?: string }) => {
+    if (isDataUrl(src)) {
+      return fill ? (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img src={src} alt={alt} className={`absolute inset-0 w-full h-full ${className || ''}`} style={{ objectFit: 'cover' }} />
+      ) : (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img src={src} alt={alt} className={`w-full h-full ${className || ''}`} style={{ objectFit: 'cover' }} />
+      );
+    }
+    return <Image src={src} alt={alt} fill={fill} className={className} />;
+  };
+
   const filteredClients = data.clients.filter(c => 
     c.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
     c.businessName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    c.location.toLowerCase().includes(searchTerm.toLowerCase())
+    (c.location || '').toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -251,12 +266,11 @@ export default function ClientsPage() {
                 onClick={() => setSelectedClient(client)}
               >
                 <div className="relative h-48 w-full">
-                  <Image 
+                  <ClientImage 
                     src={client.avatarUrl || `https://picsum.photos/seed/${client.id}/600/400`} 
                     alt={client.businessName}
                     fill
                     className="object-cover transition-transform duration-500 group-hover:scale-110"
-                    data-ai-hint="client office"
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
                   <div className="absolute bottom-4 left-4 text-white">
@@ -323,7 +337,7 @@ export default function ClientsPage() {
                 </SheetHeader>
 
                 <div className="relative h-64 -mx-6 -mt-6">
-                  <Image 
+                  <ClientImage 
                     src={selectedClient.avatarUrl || `https://picsum.photos/seed/${selectedClient.id}/600/400`} 
                     alt={selectedClient.businessName}
                     fill
