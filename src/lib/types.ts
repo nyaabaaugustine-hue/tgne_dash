@@ -42,6 +42,9 @@ export interface Payment {
   status: 'PAID' | 'PENDING';
   paymentDate?: string;
   receiptUrl?: string;
+  invoiceNumber: string;
+  description: string;
+  createdAt: string;
 }
 
 export interface Renewal {
@@ -63,18 +66,11 @@ export interface Task {
   dueDate: string;
 }
 
-export interface AIInteraction {
-  id: string;
-  userQuery: string;
-  aiResponse: string;
-  actionType?: string;
-  createdAt: string;
-}
-
 export interface AppData {
   clients: Client[];
   websites: Website[];
   credentials: Credential[];
   tasks: Task[];
   renewals: Renewal[];
+  payments: Payment[];
 }

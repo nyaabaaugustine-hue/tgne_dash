@@ -2,7 +2,7 @@
 "use client";
 
 import React, { createContext, useContext, useState, useEffect, useMemo } from 'react';
-import { AppData, Client, Website, Credential, Task, Renewal } from './types';
+import { AppData, Client, Website, Credential, Task, Renewal, Payment } from './types';
 import { useRouter } from 'next/navigation';
 import { useFirestore, useCollection } from '@/firebase';
 import { 
@@ -33,6 +33,9 @@ interface AppContextType {
   updateTask: (id: string, status: Task['status']) => void;
   addRenewal: (renewal: Partial<Renewal>) => void;
   deleteRenewal: (id: string) => void;
+  addPayment: (payment: Partial<Payment>) => void;
+  updatePayment: (id: string, updates: Partial<Payment>) => void;
+  deletePayment: (id: string) => void;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -50,6 +53,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const credentialsColl = useCollection<Credential>(db ? collection(db, 'credentials') : null);
   const tasksColl = useCollection<Task>(db ? collection(db, 'tasks') : null);
   const renewalsColl = useCollection<Renewal>(db ? collection(db, 'renewals') : null);
+  const paymentsColl = useCollection<Payment>(db ? collection(db, 'payments') : null);
 
   useEffect(() => {
     const authSession = localStorage.getItem('tgne_auth_session');
@@ -64,7 +68,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     credentials: credentialsColl.data || [],
     tasks: tasksColl.data || [],
     renewals: renewalsColl.data || [],
-  }), [clientsColl.data, websitesColl.data, credentialsColl.data, tasksColl.data, renewalsColl.data]);
+    payments: paymentsColl.data || [],
+  }), [clientsColl.data, websitesColl.data, credentialsColl.data, tasksColl.data, renewalsColl.data, paymentsColl.data]);
 
   const isLoading = clientsColl.loading || websitesColl.loading;
 
@@ -86,112 +91,79 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   // Mutations
   const addClient = (client: Partial<Client>) => {
     if (!db) return;
-    const clientRef = collection(db, 'clients');
-    addDoc(clientRef, {
+    addDoc(collection(db, 'clients'), {
       ...client,
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString()
-    }).catch(async (e) => {
+    }).catch(e => {
       errorEmitter.emit('permission-error', new FirestorePermissionError({
-        path: 'clients',
-        operation: 'create',
-        requestResourceData: client
+        path: 'clients', operation: 'create'
       }));
     });
   };
 
   const updateClient = (id: string, client: Partial<Client>) => {
     if (!db) return;
-    const clientRef = doc(db, 'clients', id);
-    updateDoc(clientRef, {
+    updateDoc(doc(db, 'clients', id), {
       ...client,
       updatedAt: new Date().toISOString()
-    }).catch(async (e) => {
-      errorEmitter.emit('permission-error', new FirestorePermissionError({
-        path: `clients/${id}`,
-        operation: 'update',
-        requestResourceData: client
-      }));
     });
   };
 
   const deleteClient = (id: string) => {
     if (!db) return;
-    const clientRef = doc(db, 'clients', id);
-    deleteDoc(clientRef).catch(async (e) => {
-      errorEmitter.emit('permission-error', new FirestorePermissionError({
-        path: `clients/${id}`,
-        operation: 'delete'
-      }));
-    });
+    deleteDoc(doc(db, 'clients', id));
   };
 
   const addWebsite = (website: Partial<Website>) => {
     if (!db) return;
-    addDoc(collection(db, 'websites'), website).catch(async (e) => {
-      errorEmitter.emit('permission-error', new FirestorePermissionError({
-        path: 'websites',
-        operation: 'create',
-        requestResourceData: website
-      }));
-    });
+    addDoc(collection(db, 'websites'), website);
   };
 
   const addCredential = (credential: Partial<Credential>) => {
     if (!db) return;
     addDoc(collection(db, 'credentials'), {
       ...credential,
-      password: btoa(credential.password || '') // Simulated encryption for display
-    }).catch(async (e) => {
-      errorEmitter.emit('permission-error', new FirestorePermissionError({
-        path: 'credentials',
-        operation: 'create',
-        requestResourceData: credential
-      }));
+      password: btoa(credential.password || '')
     });
   };
 
   const addTask = (task: Partial<Task>) => {
     if (!db) return;
-    addDoc(collection(db, 'tasks'), task).catch(async (e) => {
-      errorEmitter.emit('permission-error', new FirestorePermissionError({
-        path: 'tasks',
-        operation: 'create',
-        requestResourceData: task
-      }));
-    });
+    addDoc(collection(db, 'tasks'), task);
   };
 
   const updateTask = (id: string, status: Task['status']) => {
     if (!db) return;
-    updateDoc(doc(db, 'tasks', id), { status }).catch(async (e) => {
-      errorEmitter.emit('permission-error', new FirestorePermissionError({
-        path: `tasks/${id}`,
-        operation: 'update',
-        requestResourceData: { status }
-      }));
-    });
+    updateDoc(doc(db, 'tasks', id), { status });
   };
 
   const addRenewal = (renewal: Partial<Renewal>) => {
     if (!db) return;
-    addDoc(collection(db, 'renewals'), renewal).catch(async (e) => {
-      errorEmitter.emit('permission-error', new FirestorePermissionError({
-        path: 'renewals',
-        operation: 'create',
-        requestResourceData: renewal
-      }));
-    });
+    addDoc(collection(db, 'renewals'), renewal);
   };
 
   const deleteRenewal = (id: string) => {
     if (!db) return;
-    deleteDoc(doc(db, 'renewals', id)).catch(async (e) => {
-      errorEmitter.emit('permission-error', new FirestorePermissionError({
-        path: `renewals/${id}`,
-        operation: 'delete'
-      }));
+    deleteDoc(doc(db, 'renewals', id));
+  };
+
+  const addPayment = (payment: Partial<Payment>) => {
+    if (!db) return;
+    addDoc(collection(db, 'payments'), {
+      ...payment,
+      createdAt: new Date().toISOString()
     });
+  };
+
+  const updatePayment = (id: string, updates: Partial<Payment>) => {
+    if (!db) return;
+    updateDoc(doc(db, 'payments', id), updates);
+  };
+
+  const deletePayment = (id: string) => {
+    if (!db) return;
+    deleteDoc(doc(db, 'payments', id));
   };
 
   return (
@@ -209,7 +181,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       addTask, 
       updateTask,
       addRenewal,
-      deleteRenewal
+      deleteRenewal,
+      addPayment,
+      updatePayment,
+      deletePayment
     }}>
       {children}
     </AppContext.Provider>

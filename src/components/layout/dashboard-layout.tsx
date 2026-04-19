@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useEffect, useState } from 'react';
@@ -17,7 +18,8 @@ import {
   Sun,
   Moon,
   LogOut,
-  CalendarDays
+  CalendarDays,
+  CreditCard
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
@@ -27,6 +29,7 @@ import { AIChat } from '@/components/ai/ai-chat';
 const navItems = [
   { name: 'Dashboard', href: '/', icon: LayoutDashboard },
   { name: 'Clients', href: '/clients', icon: Users },
+  { name: 'Invoices', href: '/invoices', icon: CreditCard },
   { name: 'Credentials', href: '/credentials', icon: KeyRound },
   { name: 'Tasks', href: '/tasks', icon: CheckSquare },
   { name: 'Reminders', href: '/reminders', icon: Bell },
@@ -39,7 +42,7 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [aiOpen, setAiOpen] = useState(false);
   const [isDark, setIsDark] = useState(false);
-  const { exportData, resetData, isAuthorized, logout } = useApp();
+  const { isAuthorized, logout } = useApp();
 
   useEffect(() => {
     if (!isAuthorized && pathname !== '/tgnes') {
@@ -138,20 +141,6 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
             </Button>
             
             <div className="pt-2 space-y-1">
-              <button 
-                onClick={exportData}
-                className="w-full flex items-center gap-3 px-3 py-2 text-xs text-muted-foreground hover:text-primary transition-colors"
-              >
-                <Download size={14} />
-                <span>Export Data</span>
-              </button>
-              <button 
-                onClick={() => resetData()}
-                className="w-full flex items-center gap-3 px-3 py-2 text-xs text-muted-foreground hover:bg-muted/50 rounded-md transition-colors"
-              >
-                <RotateCcw size={14} />
-                <span>Reset Demo</span>
-              </button>
               <button 
                 onClick={logout}
                 className="w-full flex items-center gap-3 px-3 py-2 text-xs text-destructive/70 hover:text-destructive hover:bg-destructive/10 rounded-md transition-colors"
