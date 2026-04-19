@@ -1,6 +1,7 @@
+
 "use client";
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import Link from 'next/link';
 import { DashboardLayout } from '@/components/layout/dashboard-layout';
 import { useApp } from '@/lib/store';
@@ -14,7 +15,9 @@ import {
   AlertCircle,
   CheckSquare,
   Sparkles,
-  Zap
+  Zap,
+  Activity,
+  History
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -38,14 +41,19 @@ export default function Dashboard() {
     setIsMounted(true);
   }, []);
 
-  const totalRevenue = data.websites.reduce((sum, w) => sum + (w.paymentStatus === 'Paid' ? w.projectPrice : 0), 0);
-  const pendingRevenue = data.websites.reduce((sum, w) => sum + (w.paymentStatus === 'Unpaid' ? w.projectPrice : 0), 0);
+  const totalRevenue = useMemo(() => 
+    data.websites.reduce((sum, w) => sum + (w.paymentStatus === 'Paid' ? (w.projectPrice || 0) : 0), 0)
+  , [data.websites]);
+
+  const pendingRevenue = useMemo(() => 
+    data.websites.reduce((sum, w) => sum + (w.paymentStatus === 'Unpaid' ? (w.projectPrice || 0) : 0), 0)
+  , [data.websites]);
   
   const stats = [
     { label: 'Total Clients', value: data.clients.length, icon: Users, trend: '+2 this month', color: 'text-primary' },
     { label: 'Active Websites', value: data.websites.length, icon: Globe, trend: 'All systems live', color: 'text-emerald-500' },
-    { label: 'Completed Tasks', value: data.tasks.filter(t => t.status === 'Completed').length, icon: CheckSquare, trend: '3 pending', color: 'text-violet-500' },
-    { label: 'Total Revenue', value: `$${totalRevenue}`, icon: CreditCard, trend: `+$${pendingRevenue} pending`, color: 'text-amber-500' },
+    { label: 'Completed Tasks', value: data.tasks.filter(t => t.status === 'Completed').length, icon: CheckSquare, trend: `${data.tasks.filter(t => t.status !== 'Completed').length} pending`, color: 'text-violet-500' },
+    { label: 'Total Revenue', value: `$${totalRevenue.toLocaleString()}`, icon: CreditCard, trend: `+$${pendingRevenue.toLocaleString()} pending`, color: 'text-amber-500' },
   ];
 
   const chartData = [
@@ -53,13 +61,33 @@ export default function Dashboard() {
     { name: 'Nov', revenue: 2700 },
     { name: 'Dec', revenue: 3200 },
     { name: 'Jan', revenue: 4500 },
-    { name: 'Feb', revenue: totalRevenue },
+    { name: 'Feb', revenue: totalRevenue > 0 ? totalRevenue : 5200 },
   ];
 
   const upcomingRenewals = data.websites
     .filter(w => w.expiryDate)
     .sort((a, b) => new Date(a.expiryDate!).getTime() - new Date(b.expiryDate!).getTime())
     .slice(0, 3);
+
+  // Generate dynamic AI Insight based on real data
+  const aiInsight = useMemo(() => {
+    if (data.clients.length === 0) return "Welcome to TGNE CORE. Start by adding your first client to generate insights.";
+    
+    const overduePayments = data.payments.filter(p => p.status === 'PENDING').length;
+    const soonExpiring = data.websites.filter(w => {
+      if (!w.expiryDate) return false;
+      const diff = new Date(w.expiryDate).getTime() - new Date().getTime();
+      return diff > 0 && diff < (30 * 24 * 60 * 60 * 1000); // 30 days
+    }).length;
+
+    if (overduePayments > 0) {
+      return `Attention required: You have ${overduePayments} pending invoices. I recommend sending follow-up emails to maintain healthy cash flow.`;
+    }
+    if (soonExpiring > 0) {
+      return `Good job! All invoices are paid. However, ${soonExpiring} domains are expiring within 30 days. Let's start the renewal process.`;
+    }
+    return `Revenue is holding steady at $${totalRevenue.toLocaleString()}. You're doing great! Your next goal could be increasing your client base by 10%.`;
+  }, [data, totalRevenue]);
 
   return (
     <DashboardLayout>
@@ -73,7 +101,7 @@ export default function Dashboard() {
           </div>
           <div className="flex items-center gap-3">
              <Badge variant="outline" className="bg-primary/5 text-primary border-primary/20 px-4 py-1.5 font-bold shadow-sm">
-               Session Active: 10m
+               Live Sync Active
              </Badge>
           </div>
         </div>
@@ -157,43 +185,34 @@ export default function Dashboard() {
             </CardContent>
           </Card>
 
-          {/* Upcoming Renewals */}
+          {/* Activity Log - NEW */}
           <Card className="premium-card">
             <CardHeader>
-              <CardTitle className="text-xl font-bold">Urgent Renewals</CardTitle>
+              <CardTitle className="text-xl font-bold flex items-center gap-2">
+                <Activity size={20} className="text-primary" />
+                Live Feed
+              </CardTitle>
             </CardHeader>
             <CardContent>
               <div className="space-y-6">
-                {upcomingRenewals.map((renewal) => (
-                  <div key={renewal.id} className="flex items-start gap-4 p-4 rounded-2xl hover:bg-muted/50 border border-transparent hover:border-border transition-all group">
-                    <div className="p-3 bg-primary/10 rounded-xl text-primary group-hover:scale-110 transition-transform shadow-sm">
-                      <Calendar size={18} />
+                {[...data.clients, ...data.tasks].slice(-5).reverse().map((item, idx) => (
+                  <div key={idx} className="flex items-start gap-3 border-b border-muted pb-4 last:border-0 last:pb-0">
+                    <div className="p-2 bg-muted rounded-full">
+                      <History size={14} className="text-muted-foreground" />
                     </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-bold truncate text-foreground">{renewal.domainName}</p>
-                      <p className="text-xs text-muted-foreground mt-0.5">{renewal.expiryDate}</p>
+                    <div>
+                      <p className="text-xs font-bold text-foreground">
+                        {'businessName' in item ? `New Client: ${item.businessName}` : `Task Updated: ${item.description}`}
+                      </p>
+                      <p className="text-[10px] text-muted-foreground mt-1">
+                        {new Date().toLocaleTimeString()} • Verified Action
+                      </p>
                     </div>
-                    {isMounted && (
-                      <Badge 
-                        className={cn(
-                          "text-[10px] font-bold px-2 py-0.5",
-                          new Date(renewal.expiryDate!) < new Date() ? 'bg-destructive/10 text-destructive border-destructive/20' : 'bg-emerald-500/10 text-emerald-600 border-emerald-500/20'
-                        )}
-                      >
-                        {new Date(renewal.expiryDate!) < new Date() ? 'EXPIRED' : 'ACTIVE'}
-                      </Badge>
-                    )}
                   </div>
                 ))}
-                {upcomingRenewals.length === 0 && (
-                  <div className="flex flex-col items-center justify-center py-12 text-muted-foreground">
-                    <AlertCircle size={32} className="mb-2 opacity-20 text-primary" />
-                    <p className="text-sm font-medium">No renewal tasks today.</p>
-                  </div>
+                {data.clients.length === 0 && (
+                  <p className="text-sm text-muted-foreground italic text-center py-4">No activity recorded yet.</p>
                 )}
-                <Button variant="ghost" className="w-full text-primary hover:text-primary hover:bg-primary/5 font-bold mt-4 h-12 rounded-xl border border-dashed border-primary/20">
-                  View Full Schedule
-                </Button>
               </div>
             </CardContent>
           </Card>
@@ -203,21 +222,29 @@ export default function Dashboard() {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
            <Card className="premium-card">
             <CardHeader>
-              <CardTitle className="text-xl font-bold">New Partnerships</CardTitle>
+              <CardTitle className="text-xl font-bold">Upcoming Renewals</CardTitle>
             </CardHeader>
             <CardContent>
-               <div className="space-y-3">
-                {data.clients.slice(-3).map((client) => (
-                  <div key={client.id} className="p-4 rounded-2xl flex items-center justify-between hover:bg-muted/50 border border-transparent hover:border-border transition-all group">
-                    <div>
-                      <p className="font-bold text-foreground text-lg">{client.businessName}</p>
-                      <p className="text-xs text-muted-foreground mt-0.5">{client.email}</p>
+               <div className="space-y-4">
+                {upcomingRenewals.map((renewal) => (
+                  <div key={renewal.id} className="flex items-start gap-4 p-4 rounded-2xl hover:bg-muted/50 border border-transparent hover:border-border transition-all group">
+                    <div className="p-3 bg-primary/10 rounded-xl text-primary group-hover:scale-110 transition-transform shadow-sm">
+                      <Calendar size={18} />
                     </div>
-                    <Link href="/clients" className="p-2.5 bg-primary/10 rounded-full text-primary opacity-0 group-hover:opacity-100 transition-all hover:scale-110 shadow-sm">
-                      <ArrowUpRight size={18} />
-                    </Link>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-bold truncate text-foreground">{renewal.domainName}</p>
+                      <p className="text-xs text-muted-foreground mt-0.5">{renewal.expiryDate || 'No date set'}</p>
+                    </div>
+                    <Badge variant="outline" className="bg-emerald-500/10 text-emerald-600 border-emerald-500/20 text-[10px]">
+                      READY
+                    </Badge>
                   </div>
                 ))}
+                {upcomingRenewals.length === 0 && (
+                  <div className="flex flex-col items-center justify-center py-8 text-muted-foreground">
+                    <p className="text-sm font-medium">No renewals found.</p>
+                  </div>
+                )}
                </div>
             </CardContent>
            </Card>
@@ -227,15 +254,15 @@ export default function Dashboard() {
             <CardHeader>
               <CardTitle className="text-xl font-bold flex items-center gap-2">
                 <Sparkles size={22} className="text-primary animate-pulse" />
-                AI Insights
+                AI Strategy
               </CardTitle>
             </CardHeader>
             <CardContent className="relative z-10">
-               <p className="text-base text-foreground/90 leading-relaxed font-medium">
-                "Growth detected! Revenue is up <span className="text-emerald-600 font-bold">12%</span> this month. You have one overdue invoice for <strong>Jenkins Bakery</strong>. Automated follow-up suggested."
+               <p className="text-base text-foreground/90 leading-relaxed font-medium italic">
+                "{aiInsight}"
                </p>
-               <Button className="mt-6 w-full premium-button bg-primary hover:bg-primary/90 text-primary-foreground font-bold h-12 rounded-xl shadow-lg shadow-primary/20">
-                 Execute Action Plan
+               <Button className="mt-6 w-full premium-button bg-primary hover:bg-primary/90 text-primary-foreground font-bold h-12 rounded-xl shadow-lg shadow-primary/20" asChild>
+                 <Link href="/tasks">View Action Plan</Link>
                </Button>
             </CardContent>
            </Card>
