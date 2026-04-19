@@ -124,7 +124,7 @@ export const INITIAL_DATA: AppData = {
       dateCreated: '2023-10-05',
       projectPrice: 1500,
       paymentStatus: 'Paid',
-      expiryDate: '2024-12-05'
+      expiryDate: '2025-10-05'
     },
     {
       id: 'w2',
@@ -136,80 +136,51 @@ export const INITIAL_DATA: AppData = {
       dateCreated: '2023-11-20',
       projectPrice: 1200,
       paymentStatus: 'Unpaid',
-      expiryDate: '2024-03-20'
-    },
-    {
-      id: 'w3',
-      clientId: 'c3',
-      domainName: 'rossi-interiors.it',
-      url: 'https://rossi-interiors.it',
-      hostingProvider: 'Kinsta',
-      platform: 'WordPress',
-      dateCreated: '2024-01-25',
-      projectPrice: 3500,
-      paymentStatus: 'Paid',
-      expiryDate: '2025-01-25'
-    },
-    {
-      id: 'w4',
-      clientId: 'c7',
-      domainName: 'desaitech.io',
-      url: 'https://desaitech.io',
-      hostingProvider: 'Vercel',
-      platform: 'Custom',
-      dateCreated: '2024-03-02',
-      projectPrice: 5000,
-      paymentStatus: 'Partial',
-      expiryDate: '2025-03-02'
+      expiryDate: '2024-11-20'
     }
   ],
-  credentials: [
-    {
-      id: 'cr1',
-      clientId: 'c1',
-      type: 'WordPress Admin',
-      username: 'admin',
-      password: btoa('P@ssword123'),
-      url: 'https://koficrafts.com/wp-admin'
-    }
-  ],
-  tasks: [
-    {
-      id: 't1',
-      clientId: 'c1',
-      description: 'Review homepage',
-      status: 'Pending',
-      dueDate: '2024-05-01'
-    },
-    {
-      id: 't2',
-      clientId: 'c2',
-      description: 'Set up Google Analytics',
-      status: 'In Progress',
-      dueDate: '2024-04-28'
-    },
-    {
-      id: 't3',
-      clientId: 'c10',
-      description: 'Review Q1 Financials UI',
-      status: 'Pending',
-      dueDate: '2024-06-10'
-    }
-  ],
+  credentials: [],
+  tasks: [],
   reminders: [
     {
       id: 'r1',
       type: 'Domain',
-      title: 'jenkinsbakery.com Domain Expiry',
-      date: '2024-03-20',
-      isRead: false
+      title: 'Domain Renewal: koficrafts.com',
+      date: '2025-10-05',
+      isRead: false,
+      details: 'Automatic renewal scheduled via TGNE system.'
     },
     {
       id: 'r2',
-      type: 'Payment',
-      title: 'Desai Tech Final Installment',
-      date: '2024-03-15',
-      isRead: false
+      type: 'Hosting',
+      title: 'Hosting Renewal: Jenkins Bakery',
+      date: '2024-11-20',
+      isRead: false,
+      details: 'SiteGround hosting package renewal.'
+    },
+    {
+      id: 'r3',
+      type: 'Web Management',
+      title: 'Q2 Performance Audit: Petrova Legal',
+      date: '2024-06-15',
+      isRead: false,
+      details: 'Quarterly review of SEO and site speed performance.'
+    },
+    {
+      id: 'r4',
+      type: 'Web Management',
+      title: 'Monthly Security Patching',
+      date: '2024-05-01',
+      isRead: false,
+      details: 'Core updates and plugin security hardening for all WP clients.'
+    },
+    {
+      id: 'r5',
+      type: 'Domain',
+      title: 'Domain Expiry: desaitech.io',
+      date: '2024-12-01',
+      isRead: false,
+      details: 'Vercel domain management renewal.'
     }
   ]
 };

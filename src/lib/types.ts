@@ -42,10 +42,11 @@ export interface Task {
 
 export interface Reminder {
   id: string;
-  type: 'Domain' | 'Hosting' | 'Payment' | 'Task';
+  type: 'Domain' | 'Hosting' | 'Payment' | 'Web Management';
   title: string;
   date: string;
   isRead: boolean;
+  details?: string;
 }
 
 export interface AppData {
