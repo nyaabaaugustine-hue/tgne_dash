@@ -145,7 +145,7 @@ export default function AdminPinPage() {
         <div className="mt-8 flex items-center justify-center gap-6 opacity-60 grayscale hover:grayscale-0 transition-all">
           <ShieldCheck size={20} className="text-white" />
           <div className="h-4 w-px bg-white/20" />
-          <span className="text-[10px] text-white font-bold tracking-[0.2em] uppercase">AES-256 Simulated</span>
+          <span className="text-[10px] text-white font-bold tracking-[0.2em] uppercase">secure</span>
         </div>
       </div>
 
