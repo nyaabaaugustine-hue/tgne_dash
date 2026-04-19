@@ -1,12 +1,17 @@
+
 "use client";
 
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { AppData, Client, Website, Credential, Task, Reminder } from './types';
 import { INITIAL_DATA } from './mock-data';
 import { useToast } from '@/hooks/use-toast';
+import { useRouter, usePathname } from 'next/navigation';
 
 interface AppContextType {
   data: AppData;
+  isAuthorized: boolean;
+  verifyPin: (pin: string) => boolean;
+  logout: () => void;
   addClient: (client: Omit<Client, 'id' | 'createdAt'>) => void;
   updateClient: (id: string, client: Partial<Client>) => void;
   deleteClient: (id: string) => void;
@@ -22,11 +27,15 @@ interface AppContextType {
 const AppContext = createContext<AppContextType | undefined>(undefined);
 
 const EXPIRY_TIME = 10 * 60 * 1000; // 10 minutes in milliseconds
+const ADMIN_PIN = "1234567a";
 
 export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [data, setData] = useState<AppData>(INITIAL_DATA);
+  const [isAuthorized, setIsAuthorized] = useState(false);
   const [isInitialized, setIsInitialized] = useState(false);
   const { toast } = useToast();
+  const router = useRouter();
+  const pathname = usePathname();
 
   const updateActivityTimestamp = () => {
     localStorage.setItem('devdash_last_activity', Date.now().toString());
@@ -35,6 +44,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   useEffect(() => {
     const saved = localStorage.getItem('devdash_data');
     const lastActivity = localStorage.getItem('devdash_last_activity');
+    const authSession = localStorage.getItem('tgne_auth_session');
     const now = Date.now();
 
     if (saved && lastActivity) {
@@ -42,10 +52,15 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       if (timeDiff > EXPIRY_TIME) {
         console.log("Session expired. Resetting demo data.");
         setData(INITIAL_DATA);
+        setIsAuthorized(false);
+        localStorage.removeItem('tgne_auth_session');
         updateActivityTimestamp();
       } else {
         try {
           setData(JSON.parse(saved));
+          if (authSession === 'true') {
+            setIsAuthorized(true);
+          }
         } catch (e) {
           console.error("Failed to load local data", e);
         }
@@ -62,6 +77,22 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       updateActivityTimestamp();
     }
   }, [data, isInitialized]);
+
+  const verifyPin = (pin: string) => {
+    if (pin === ADMIN_PIN) {
+      setIsAuthorized(true);
+      localStorage.setItem('tgne_auth_session', 'true');
+      updateActivityTimestamp();
+      return true;
+    }
+    return false;
+  };
+
+  const logout = () => {
+    setIsAuthorized(false);
+    localStorage.removeItem('tgne_auth_session');
+    router.push('/tgnes');
+  };
 
   const addClient = (client: Omit<Client, 'id' | 'createdAt'>) => {
     const newClient: Client = {
@@ -132,7 +163,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `devdash-export-${new Date().toISOString().split('T')[0]}.json`;
+    a.download = `tgne-export-${new Date().toISOString().split('T')[0]}.json`;
     a.click();
   };
 
@@ -157,6 +188,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   return (
     <AppContext.Provider value={{ 
       data, 
+      isAuthorized,
+      verifyPin,
+      logout,
       addClient, 
       updateClient, 
       deleteClient, 

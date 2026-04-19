@@ -1,9 +1,10 @@
+
 "use client";
 
 import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { 
   LayoutDashboard, 
   Users, 
@@ -15,7 +16,8 @@ import {
   RotateCcw,
   Menu,
   Sun,
-  Moon
+  Moon,
+  LogOut
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
@@ -32,10 +34,18 @@ const navItems = [
 
 export function DashboardLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
+  const router = useRouter();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [aiOpen, setAiOpen] = useState(false);
   const [isDark, setIsDark] = useState(false);
-  const { exportData, resetData } = useApp();
+  const { exportData, resetData, isAuthorized, logout } = useApp();
+
+  useEffect(() => {
+    // Protection: Redirect to PIN page if not authorized
+    if (!isAuthorized && pathname !== '/tgnes') {
+      router.push('/tgnes');
+    }
+  }, [isAuthorized, pathname, router]);
 
   useEffect(() => {
     const savedTheme = localStorage.getItem('theme');
@@ -60,6 +70,15 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
   };
 
   const logoUrl = "https://res.cloudinary.com/dwsl2ktt2/image/upload/v1776598078/download_kangs7.png";
+
+  // Prevent flash of content if not authorized
+  if (!isAuthorized && pathname !== '/tgnes') {
+    return (
+      <div className="h-screen w-full bg-[#02040a] flex items-center justify-center">
+        <div className="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin" />
+      </div>
+    );
+  }
 
   return (
     <div className="flex h-screen bg-background text-foreground overflow-hidden">
@@ -130,10 +149,17 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
               </button>
               <button 
                 onClick={() => resetData()}
-                className="w-full flex items-center gap-3 px-3 py-2 text-xs text-destructive hover:bg-destructive/10 rounded-md transition-colors"
+                className="w-full flex items-center gap-3 px-3 py-2 text-xs text-muted-foreground hover:bg-muted/50 rounded-md transition-colors"
               >
                 <RotateCcw size={14} />
                 <span>Reset Demo</span>
+              </button>
+              <button 
+                onClick={logout}
+                className="w-full flex items-center gap-3 px-3 py-2 text-xs text-destructive hover:bg-destructive/10 rounded-md transition-colors"
+              >
+                <LogOut size={14} />
+                <span>Lock Dashboard</span>
               </button>
             </div>
           </div>
