@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { useState, useEffect } from 'react';
@@ -42,12 +41,25 @@ export default function AdminPinPage() {
   };
 
   const logoUrl = "https://res.cloudinary.com/dwsl2ktt2/image/upload/v1776598078/download_kangs7.png";
+  const bgUrl = "https://res.cloudinary.com/dwsl2ktt2/image/upload/v1776599742/upscaled_10x_back_ziilsg.png";
 
   return (
     <div className="min-h-screen bg-[#02040a] flex items-center justify-center p-4 relative overflow-hidden">
+      {/* Premium Background Image */}
+      <div className="absolute inset-0 z-0">
+        <Image 
+          src={bgUrl} 
+          alt="Security Background" 
+          fill 
+          className="object-cover opacity-60"
+          priority
+        />
+        <div className="absolute inset-0 bg-gradient-to-b from-[#02040a]/80 via-[#02040a]/40 to-[#02040a]/90" />
+      </div>
+
       {/* Dynamic Background Effects */}
-      <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-primary/20 rounded-full blur-[120px] animate-pulse" />
-      <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-accent/20 rounded-full blur-[120px] animate-pulse [animation-delay:2s]" />
+      <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-primary/20 rounded-full blur-[120px] animate-pulse z-1" />
+      <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-accent/20 rounded-full blur-[120px] animate-pulse [animation-delay:2s] z-1" />
 
       <div className="w-full max-w-md z-10">
         <div className="flex flex-col items-center mb-10 animate-in fade-in slide-in-from-top-8 duration-700">
@@ -63,17 +75,17 @@ export default function AdminPinPage() {
               />
             </div>
           </div>
-          <h1 className="text-4xl font-extrabold tracking-tighter text-white text-center">
+          <h1 className="text-4xl font-extrabold tracking-tighter text-white text-center drop-shadow-lg">
             TGNE <span className="text-primary">SECURE</span>
           </h1>
-          <p className="text-muted-foreground mt-2 text-sm font-medium tracking-widest uppercase">
+          <p className="text-muted-foreground mt-2 text-sm font-medium tracking-widest uppercase bg-black/40 px-3 py-1 rounded-full border border-white/5 backdrop-blur-sm">
             Authorized Personnel Only
           </p>
         </div>
 
         <Card className={cn(
-          "glass-morphism border-white/5 bg-white/5 overflow-hidden transition-all duration-300",
-          error ? "border-red-500/50 shadow-[0_0_40px_rgba(239,68,68,0.2)] animate-shake" : "shadow-2xl"
+          "glass-morphism border-white/10 bg-black/40 backdrop-blur-2xl overflow-hidden transition-all duration-300",
+          error ? "border-red-500/50 shadow-[0_0_40px_rgba(239,68,68,0.2)] animate-shake" : "shadow-2xl shadow-black/50"
         )}>
           <CardContent className="p-8">
             <form onSubmit={handleSubmit} className="space-y-6">
@@ -98,7 +110,7 @@ export default function AdminPinPage() {
                   onChange={(e) => setPin(e.target.value)}
                   placeholder="••••••••"
                   className={cn(
-                    "h-14 bg-black/40 border-white/10 text-center text-2xl tracking-[1em] focus:ring-primary focus:border-primary transition-all duration-300",
+                    "h-14 bg-black/60 border-white/10 text-center text-2xl tracking-[1em] focus:ring-primary focus:border-primary transition-all duration-300 placeholder:tracking-normal",
                     error && "border-red-500/50 focus:ring-red-500 focus:border-red-500"
                   )}
                   autoFocus
@@ -130,7 +142,7 @@ export default function AdminPinPage() {
           </CardContent>
         </Card>
 
-        <div className="mt-8 flex items-center justify-center gap-6 opacity-40 grayscale hover:grayscale-0 transition-all">
+        <div className="mt-8 flex items-center justify-center gap-6 opacity-60 grayscale hover:grayscale-0 transition-all">
           <ShieldCheck size={20} className="text-white" />
           <div className="h-4 w-px bg-white/20" />
           <span className="text-[10px] text-white font-bold tracking-[0.2em] uppercase">AES-256 Simulated</span>
