@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { useApp } from '@/lib/store';
-import { ShieldAlert, ShieldCheck, Lock, ArrowRight, Loader2, Zap } from 'lucide-react';
+import { ShieldAlert, ShieldCheck, Lock, ArrowRight, Loader2, Zap, CheckCircle2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent } from '@/components/ui/card';
@@ -14,14 +14,15 @@ export default function AdminPinPage() {
   const [pin, setPin] = useState('');
   const [error, setError] = useState(false);
   const [isVerifying, setIsVerifying] = useState(false);
+  const [isSuccess, setIsSuccess] = useState(false);
   const { verifyPin, isAuthorized } = useApp();
   const router = useRouter();
 
   useEffect(() => {
-    if (isAuthorized) {
+    if (isAuthorized && !isSuccess) {
       router.push('/');
     }
-  }, [isAuthorized, router]);
+  }, [isAuthorized, router, isSuccess]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -32,7 +33,12 @@ export default function AdminPinPage() {
     await new Promise(resolve => setTimeout(resolve, 1500));
 
     if (verifyPin(pin)) {
-      router.push('/');
+      setIsSuccess(true);
+      setIsVerifying(false);
+      // Wait for the success animation to be seen
+      setTimeout(() => {
+        router.push('/');
+      }, 2000);
     } else {
       setError(true);
       setPin('');
@@ -45,6 +51,20 @@ export default function AdminPinPage() {
 
   return (
     <div className="min-h-screen bg-[#02040a] flex items-center justify-center p-4 relative overflow-hidden">
+      {/* Success Notification - Slides in from the top */}
+      <div className={cn(
+        "fixed top-8 left-1/2 -translate-x-1/2 z-[100] transition-all duration-700 ease-out flex items-center gap-4 px-6 py-4 rounded-2xl border bg-black/80 backdrop-blur-2xl shadow-[0_0_50px_rgba(16,185,129,0.3)] border-emerald-500/50",
+        isSuccess ? "translate-y-0 opacity-100" : "-translate-y-32 opacity-0"
+      )}>
+        <div className="bg-emerald-500/20 p-2 rounded-xl border border-emerald-500/30">
+          <CheckCircle2 className="text-emerald-500 animate-pulse" size={24} />
+        </div>
+        <div>
+          <p className="text-[10px] font-black text-emerald-500 uppercase tracking-[0.3em]">Identity Verified</p>
+          <p className="text-white font-bold text-sm">ACCESS GRANTED. INITIALIZING CORE...</p>
+        </div>
+      </div>
+
       {/* Premium Background Image */}
       <div className="absolute inset-0 z-0">
         <Image 
@@ -91,7 +111,8 @@ export default function AdminPinPage() {
 
         <Card className={cn(
           "glass-morphism border-white/10 bg-black/60 backdrop-blur-3xl overflow-hidden transition-all duration-500",
-          error ? "border-red-500/50 shadow-[0_0_60px_rgba(239,68,68,0.3)] animate-shake" : "shadow-[0_20px_50px_rgba(0,0,0,0.5)]"
+          error ? "border-red-500/50 shadow-[0_0_60px_rgba(239,68,68,0.3)] animate-shake" : "shadow-[0_20px_50px_rgba(0,0,0,0.5)]",
+          isSuccess && "border-emerald-500/50 shadow-[0_0_60px_rgba(16,185,129,0.3)]"
         )}>
           <CardContent className="p-10 relative">
             {/* Scanning line animation */}
@@ -100,8 +121,13 @@ export default function AdminPinPage() {
             <form onSubmit={handleSubmit} className="space-y-8 relative z-10">
               <div className="space-y-3 text-center">
                 <div className="flex justify-center mb-2">
-                  <div className="p-3 bg-primary/10 rounded-2xl border border-primary/20">
-                    {error ? (
+                  <div className={cn(
+                    "p-3 rounded-2xl border transition-colors duration-500",
+                    isSuccess ? "bg-emerald-500/10 border-emerald-500/20" : "bg-primary/10 border-primary/20"
+                  )}>
+                    {isSuccess ? (
+                      <CheckCircle2 className="text-emerald-500 animate-in zoom-in duration-500" size={40} />
+                    ) : error ? (
                       <ShieldAlert className="text-red-500 animate-bounce" size={40} />
                     ) : isVerifying ? (
                       <Loader2 className="text-primary animate-spin" size={40} />
@@ -110,12 +136,19 @@ export default function AdminPinPage() {
                     )}
                   </div>
                 </div>
-                <h2 className="text-2xl font-bold text-white tracking-tight">Security Access</h2>
-                <p className="text-xs text-muted-foreground font-medium">Verify your administrative credentials to continue</p>
+                <h2 className="text-2xl font-bold text-white tracking-tight">
+                  {isSuccess ? "Identity Verified" : "Security Access"}
+                </h2>
+                <p className="text-xs text-muted-foreground font-medium">
+                  {isSuccess ? "Initializing administrator dashboard..." : "Verify your administrative credentials to continue"}
+                </p>
               </div>
 
               <div className="relative group">
-                <div className="absolute -inset-1 bg-gradient-to-r from-primary/20 to-accent/20 rounded-xl blur opacity-25 group-focus-within:opacity-100 transition duration-1000"></div>
+                <div className={cn(
+                  "absolute -inset-1 rounded-xl blur transition duration-1000",
+                  isSuccess ? "bg-emerald-500/40 opacity-100" : "bg-gradient-to-r from-primary/20 to-accent/20 opacity-25 group-focus-within:opacity-100"
+                )}></div>
                 <Input
                   type="password"
                   value={pin}
@@ -124,10 +157,11 @@ export default function AdminPinPage() {
                   className={cn(
                     "relative h-20 bg-black/80 border-white/5 text-center text-5xl text-white tracking-[0.6em] focus:ring-primary focus:border-primary/50 transition-all duration-500 placeholder:tracking-normal font-mono",
                     error && "border-red-500/50 focus:ring-red-500 focus:border-red-500",
+                    isSuccess && "border-emerald-500/50 text-emerald-500",
                     "rounded-xl shadow-inner"
                   )}
                   autoFocus
-                  disabled={isVerifying}
+                  disabled={isVerifying || isSuccess}
                 />
               </div>
 
@@ -142,13 +176,19 @@ export default function AdminPinPage() {
 
               <Button 
                 type="submit" 
-                disabled={pin.length < 1 || isVerifying}
+                disabled={pin.length < 1 || isVerifying || isSuccess}
                 className={cn(
-                  "w-full h-16 premium-button bg-primary hover:bg-primary/90 text-white font-black text-xl group relative overflow-hidden",
+                  "w-full h-16 premium-button font-black text-xl group relative overflow-hidden transition-all duration-500",
+                  isSuccess ? "bg-emerald-500 hover:bg-emerald-600 text-white" : "bg-primary hover:bg-primary/90 text-white",
                   isVerifying && "opacity-80"
                 )}
               >
-                {isVerifying ? (
+                {isSuccess ? (
+                  <span className="flex items-center gap-3">
+                    <CheckCircle2 size={24} />
+                    Access Granted
+                  </span>
+                ) : isVerifying ? (
                   <span className="flex items-center gap-3">
                     <Loader2 className="animate-spin" size={20} />
                     Authenticating...
