@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { useApp } from '@/lib/store';
-import { ShieldAlert, ShieldCheck, Lock, ArrowRight, Loader2 } from 'lucide-react';
+import { ShieldAlert, ShieldCheck, Lock, ArrowRight, Loader2, Zap } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent } from '@/components/ui/card';
@@ -28,8 +28,8 @@ export default function AdminPinPage() {
     setIsVerifying(true);
     setError(false);
 
-    // Artificial delay for premium feel
-    await new Promise(resolve => setTimeout(resolve, 800));
+    // Artificial delay for premium feel and identity verification simulation
+    await new Promise(resolve => setTimeout(resolve, 1500));
 
     if (verifyPin(pin)) {
       router.push('/');
@@ -54,64 +54,77 @@ export default function AdminPinPage() {
           className="object-cover opacity-60"
           priority
         />
-        <div className="absolute inset-0 bg-gradient-to-b from-[#02040a]/80 via-[#02040a]/40 to-[#02040a]/90" />
+        <div className="absolute inset-0 bg-gradient-to-b from-[#02040a]/90 via-[#02040a]/40 to-[#02040a]/95" />
       </div>
 
       {/* Dynamic Background Effects */}
-      <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-primary/20 rounded-full blur-[120px] animate-pulse z-1" />
-      <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-accent/20 rounded-full blur-[120px] animate-pulse [animation-delay:2s] z-1" />
+      <div className="absolute top-[-20%] left-[-10%] w-[60%] h-[60%] bg-primary/10 rounded-full blur-[140px] animate-pulse z-1" />
+      <div className="absolute bottom-[-20%] right-[-10%] w-[60%] h-[60%] bg-accent/10 rounded-full blur-[140px] animate-pulse [animation-delay:3s] z-1" />
 
       <div className="w-full max-w-md z-10">
-        <div className="flex flex-col items-center mb-10 animate-in fade-in slide-in-from-top-8 duration-700">
-          <div className="relative w-20 h-20 mb-6 group">
-            <div className="absolute inset-0 bg-primary/30 rounded-2xl blur-xl group-hover:bg-primary/50 transition-all duration-500" />
-            <div className="relative w-full h-full bg-white rounded-2xl border border-white/20 p-3 shadow-2xl flex items-center justify-center overflow-hidden">
+        <div className="flex flex-col items-center mb-10 animate-in fade-in slide-in-from-top-12 duration-1000">
+          <div className="relative w-24 h-24 mb-6 group cursor-default">
+            <div className="absolute inset-0 bg-primary/40 rounded-3xl blur-2xl group-hover:bg-primary/60 transition-all duration-700 animate-pulse" />
+            <div className="relative w-full h-full bg-white rounded-3xl border border-white/20 p-4 shadow-2xl flex items-center justify-center overflow-hidden transition-transform duration-500 group-hover:scale-105">
               <Image 
                 src={logoUrl} 
                 alt="TGNE Logo" 
                 fill 
-                className="object-contain p-2"
+                className="object-contain p-3"
                 priority
               />
             </div>
+            <div className="absolute -bottom-2 -right-2 bg-primary text-white p-1.5 rounded-lg shadow-xl animate-bounce">
+              <ShieldCheck size={16} />
+            </div>
           </div>
-          <h1 className="text-4xl font-extrabold tracking-tighter text-white text-center drop-shadow-lg">
-            TGNE <span className="text-primary">SECURE</span>
+          <h1 className="text-5xl font-black tracking-tighter text-white text-center drop-shadow-2xl">
+            TGNE <span className="text-primary italic">CORE</span>
           </h1>
-          <p className="text-muted-foreground mt-2 text-sm font-medium tracking-widest uppercase bg-black/40 px-3 py-1 rounded-full border border-white/5 backdrop-blur-sm">
-            Authorized Personnel Only
-          </p>
+          <div className="flex items-center gap-2 mt-4 px-4 py-1.5 rounded-full bg-white/5 border border-white/10 backdrop-blur-md">
+            <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+            <p className="text-[10px] text-muted-foreground font-bold tracking-[0.3em] uppercase">
+              Encrypted Session Path
+            </p>
+          </div>
         </div>
 
         <Card className={cn(
-          "glass-morphism border-white/10 bg-black/40 backdrop-blur-2xl overflow-hidden transition-all duration-300",
-          error ? "border-red-500/50 shadow-[0_0_40px_rgba(239,68,68,0.2)] animate-shake" : "shadow-2xl shadow-black/50"
+          "glass-morphism border-white/10 bg-black/60 backdrop-blur-3xl overflow-hidden transition-all duration-500",
+          error ? "border-red-500/50 shadow-[0_0_60px_rgba(239,68,68,0.3)] animate-shake" : "shadow-[0_20px_50px_rgba(0,0,0,0.5)]"
         )}>
-          <CardContent className="p-8">
-            <form onSubmit={handleSubmit} className="space-y-6">
-              <div className="space-y-2 text-center">
+          <CardContent className="p-10 relative">
+            {/* Scanning line animation */}
+            <div className="absolute top-0 left-0 w-full h-[1px] bg-gradient-to-r from-transparent via-primary/50 to-transparent animate-scan z-20" />
+            
+            <form onSubmit={handleSubmit} className="space-y-8 relative z-10">
+              <div className="space-y-3 text-center">
                 <div className="flex justify-center mb-2">
-                  {error ? (
-                    <ShieldAlert className="text-red-500 animate-bounce" size={32} />
-                  ) : isVerifying ? (
-                    <Loader2 className="text-primary animate-spin" size={32} />
-                  ) : (
-                    <Lock className="text-primary/60" size={32} />
-                  )}
+                  <div className="p-3 bg-primary/10 rounded-2xl border border-primary/20">
+                    {error ? (
+                      <ShieldAlert className="text-red-500 animate-bounce" size={40} />
+                    ) : isVerifying ? (
+                      <Loader2 className="text-primary animate-spin" size={40} />
+                    ) : (
+                      <Lock className="text-primary/80 animate-pulse" size={40} />
+                    )}
+                  </div>
                 </div>
-                <h2 className="text-xl font-bold text-white">Enter Security PIN</h2>
-                <p className="text-xs text-muted-foreground">Access code required for dashboard entry</p>
+                <h2 className="text-2xl font-bold text-white tracking-tight">Security Access</h2>
+                <p className="text-xs text-muted-foreground font-medium">Verify your administrative credentials to continue</p>
               </div>
 
               <div className="relative group">
+                <div className="absolute -inset-1 bg-gradient-to-r from-primary/20 to-accent/20 rounded-xl blur opacity-25 group-focus-within:opacity-100 transition duration-1000"></div>
                 <Input
                   type="password"
                   value={pin}
                   onChange={(e) => setPin(e.target.value)}
                   placeholder="••••••••"
                   className={cn(
-                    "h-14 bg-black/60 border-white/10 text-center text-2xl tracking-[1em] focus:ring-primary focus:border-primary transition-all duration-300 placeholder:tracking-normal",
-                    error && "border-red-500/50 focus:ring-red-500 focus:border-red-500"
+                    "relative h-16 bg-black/80 border-white/5 text-center text-3xl tracking-[0.8em] focus:ring-primary focus:border-primary/50 transition-all duration-500 placeholder:tracking-normal font-mono",
+                    error && "border-red-500/50 focus:ring-red-500 focus:border-red-500",
+                    "rounded-xl shadow-inner"
                   )}
                   autoFocus
                   disabled={isVerifying}
@@ -119,44 +132,72 @@ export default function AdminPinPage() {
               </div>
 
               {error && (
-                <p className="text-red-400 text-[10px] font-bold text-center uppercase tracking-widest animate-in fade-in">
-                  Access Denied. Please try again.
-                </p>
+                <div className="flex items-center justify-center gap-2 text-red-400 animate-in fade-in zoom-in-95 duration-300">
+                  <Zap size={14} className="animate-pulse" />
+                  <p className="text-[10px] font-black uppercase tracking-[0.2em]">
+                    Identity Verification Failed
+                  </p>
+                </div>
               )}
 
               <Button 
                 type="submit" 
                 disabled={pin.length < 1 || isVerifying}
-                className="w-full h-14 premium-button bg-primary hover:bg-primary/90 text-white font-bold text-lg group"
+                className={cn(
+                  "w-full h-16 premium-button bg-primary hover:bg-primary/90 text-white font-black text-xl group relative overflow-hidden",
+                  isVerifying && "opacity-80"
+                )}
               >
                 {isVerifying ? (
-                  "Verifying Identity..."
+                  <span className="flex items-center gap-3">
+                    <Loader2 className="animate-spin" size={20} />
+                    Authenticating...
+                  </span>
                 ) : (
                   <span className="flex items-center gap-2">
-                    Initialize Session
-                    <ArrowRight className="group-hover:translate-x-1 transition-transform" size={20} />
+                    Initialize Core
+                    <ArrowRight className="group-hover:translate-x-1.5 transition-transform duration-300" size={24} />
                   </span>
                 )}
+                {/* Button shine effect */}
+                <div className="absolute top-0 -left-full w-full h-full bg-gradient-to-r from-transparent via-white/10 to-transparent group-hover:left-full transition-all duration-1000" />
               </Button>
             </form>
           </CardContent>
         </Card>
 
-        <div className="mt-8 flex items-center justify-center gap-6 opacity-60 grayscale hover:grayscale-0 transition-all">
-          <ShieldCheck size={20} className="text-white" />
-          <div className="h-4 w-px bg-white/20" />
-          <span className="text-[10px] text-white font-bold tracking-[0.2em] uppercase">secure</span>
+        <div className="mt-10 flex items-center justify-center gap-8 opacity-40 hover:opacity-100 transition-opacity duration-500">
+          <div className="flex items-center gap-2">
+            <ShieldCheck size={16} className="text-white" />
+            <span className="text-[9px] text-white font-black tracking-[0.3em] uppercase">secure</span>
+          </div>
+          <div className="h-4 w-[1px] bg-white/20" />
+          <div className="flex items-center gap-2">
+            <Lock size={16} className="text-white" />
+            <span className="text-[9px] text-white font-black tracking-[0.3em] uppercase">AES-GCM</span>
+          </div>
         </div>
       </div>
 
       <style jsx global>{`
         @keyframes shake {
           0%, 100% { transform: translateX(0); }
-          25% { transform: translateX(-8px); }
-          75% { transform: translateX(8px); }
+          20% { transform: translateX(-10px); }
+          40% { transform: translateX(10px); }
+          60% { transform: translateX(-10px); }
+          80% { transform: translateX(10px); }
+        }
+        @keyframes scan {
+          0% { transform: translateY(0); opacity: 0; }
+          10% { opacity: 1; }
+          90% { opacity: 1; }
+          100% { transform: translateY(400px); opacity: 0; }
         }
         .animate-shake {
-          animation: shake 0.2s ease-in-out 0s 2;
+          animation: shake 0.4s cubic-bezier(.36,.07,.19,.97) both;
+        }
+        .animate-scan {
+          animation: scan 3s linear infinite;
         }
       `}</style>
     </div>
