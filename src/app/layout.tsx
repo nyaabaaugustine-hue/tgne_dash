@@ -2,6 +2,7 @@ import type {Metadata} from 'next';
 import './globals.css';
 import { AppProvider } from '@/lib/store';
 import { Toaster } from '@/components/ui/toaster';
+import { SavingIndicator } from '@/components/saving-indicator';
 
 export const metadata: Metadata = {
   title: 'TGNE | Premium Web Dev Dashboard',
@@ -27,6 +28,7 @@ export default function RootLayout({
       </head>
       <body className="font-body antialiased" suppressHydrationWarning>
         <AppProvider>
+          <SavingIndicator />
           {children}
           <Toaster />
         </AppProvider>

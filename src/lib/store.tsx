@@ -8,6 +8,7 @@ import { toast } from '@/hooks/use-toast';
 interface AppContextType {
   data: AppData;
   isLoading: boolean;
+  isSaving: boolean;
   isAuthorized: boolean;
   verifyPin: (pin: string) => boolean;
   logout: () => void;
@@ -58,6 +59,7 @@ const api = {
 export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [isAuthorized, setIsAuthorized] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const [isSaving, setIsSaving] = useState(false);
   const [data, setData] = useState<AppData>({
     clients: [],
     websites: [],
@@ -114,129 +116,181 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     });
   };
 
+  // ═══════════════════════════════════════════════════
+  // MutActions with Premium Save Animation
+  // ═══════════════════════════════════════════════════
+
   // ── Clients ──────────────────────────────────────────────
   const addClient = async (client: Partial<Client>) => {
+    setIsSaving(true);
     try {
       const r = await api.post('/api/clients', client);
       if (!r.ok) throw new Error(await r.text());
       await refreshData();
+      toast({ title: 'Success', description: 'Client added successfully!' });
     } catch (e) {
       handleError('addClient', e);
+    } finally {
+      setIsSaving(false);
     }
   };
 
   const updateClient = async (id: string, client: Partial<Client>) => {
+    setIsSaving(true);
     try {
       const r = await api.put('/api/clients', { id, ...client });
       if (!r.ok) throw new Error(await r.text());
       await refreshData();
+      toast({ title: 'Success', description: 'Client updated!' });
     } catch (e) {
       handleError('updateClient', e);
+    } finally {
+      setIsSaving(false);
     }
   };
 
   const deleteClient = async (id: string) => {
+    setIsSaving(true);
     try {
       const r = await api.del('/api/clients', { id });
       if (!r.ok) throw new Error(await r.text());
       await refreshData();
+      toast({ title: 'Deleted', description: 'Client removed.' });
     } catch (e) {
       handleError('deleteClient', e);
+    } finally {
+      setIsSaving(false);
     }
   };
 
   // ── Websites ─────────────────────────────────────────────
   const addWebsite = async (website: Partial<Website>) => {
+    setIsSaving(true);
     try {
       const r = await api.post('/api/websites', website);
       if (!r.ok) throw new Error(await r.text());
       await refreshData();
+      toast({ title: 'Success', description: 'Website added!' });
     } catch (e) {
       handleError('addWebsite', e);
+    } finally {
+      setIsSaving(false);
     }
   };
 
   // ── Credentials ──────────────────────────────────────────
   const addCredential = async (credential: Partial<Credential>) => {
+    setIsSaving(true);
     try {
       const r = await api.post('/api/credentials', credential);
       if (!r.ok) throw new Error(await r.text());
       await refreshData();
+      toast({ title: 'Secured', description: 'Credential saved to vault!' });
     } catch (e) {
       handleError('addCredential', e);
+    } finally {
+      setIsSaving(false);
     }
   };
 
   // ── Tasks ────────────────────────────────────────────────
   const addTask = async (task: Partial<Task>) => {
+    setIsSaving(true);
     try {
       const r = await api.post('/api/tasks', task);
       if (!r.ok) throw new Error(await r.text());
       await refreshData();
+      toast({ title: 'Success', description: 'Task created!' });
     } catch (e) {
       handleError('addTask', e);
+    } finally {
+      setIsSaving(false);
     }
   };
 
   const updateTask = async (id: string, status: Task['status']) => {
+    setIsSaving(true);
     try {
       const r = await api.put('/api/tasks', { id, status });
       if (!r.ok) throw new Error(await r.text());
       await refreshData();
+      toast({ title: 'Updated', description: `Task marked as ${status}` });
     } catch (e) {
       handleError('updateTask', e);
+    } finally {
+      setIsSaving(false);
     }
   };
 
   // ── Reminders ────────────────────────────────────────────
   const addReminder = async (reminder: Partial<Reminder>) => {
+    setIsSaving(true);
     try {
       const r = await api.post('/api/reminders', reminder);
       if (!r.ok) throw new Error(await r.text());
       await refreshData();
+      toast({ title: 'Set', description: 'Reminder scheduled!' });
     } catch (e) {
       handleError('addReminder', e);
+    } finally {
+      setIsSaving(false);
     }
   };
 
   const deleteReminder = async (id: string) => {
+    setIsSaving(true);
     try {
       const r = await api.del('/api/reminders', { id });
       if (!r.ok) throw new Error(await r.text());
       await refreshData();
+      toast({ title: 'Removed', description: 'Reminder deleted.' });
     } catch (e) {
       handleError('deleteReminder', e);
+    } finally {
+      setIsSaving(false);
     }
   };
 
   // ── Payments ─────────────────────────────────────────────
   const addPayment = async (payment: Partial<Payment>) => {
+    setIsSaving(true);
     try {
       const r = await api.post('/api/payments', payment);
       if (!r.ok) throw new Error(await r.text());
       await refreshData();
+      toast({ title: 'Invoice Created', description: 'New invoice saved!' });
     } catch (e) {
       handleError('addPayment', e);
+    } finally {
+      setIsSaving(false);
     }
   };
 
   const updatePayment = async (id: string, updates: Partial<Payment>) => {
+    setIsSaving(true);
     try {
       const r = await api.put('/api/payments', { id, ...updates });
       if (!r.ok) throw new Error(await r.text());
       await refreshData();
+      toast({ title: 'Updated', description: 'Invoice updated!' });
     } catch (e) {
       handleError('updatePayment', e);
+    } finally {
+      setIsSaving(false);
     }
   };
 
   const deletePayment = async (id: string) => {
+    setIsSaving(true);
     try {
       const r = await api.del('/api/payments', { id });
       if (!r.ok) throw new Error(await r.text());
       await refreshData();
+      toast({ title: 'Deleted', description: 'Invoice removed.' });
     } catch (e) {
       handleError('deletePayment', e);
+    } finally {
+      setIsSaving(false);
     }
   };
 
@@ -245,6 +299,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       value={{
         data,
         isLoading,
+        isSaving,
         isAuthorized,
         verifyPin,
         logout,
