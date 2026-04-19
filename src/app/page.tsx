@@ -1,6 +1,6 @@
 "use client";
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { DashboardLayout } from '@/components/layout/dashboard-layout';
 import { useApp } from '@/lib/store';
@@ -32,6 +32,11 @@ import {
 
 export default function Dashboard() {
   const { data } = useApp();
+  const [isMounted, setIsMounted] = useState(false);
+
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
 
   const totalRevenue = data.websites.reduce((sum, w) => sum + (w.paymentStatus === 'Paid' ? w.projectPrice : 0), 0);
   const pendingRevenue = data.websites.reduce((sum, w) => sum + (w.paymentStatus === 'Unpaid' ? w.projectPrice : 0), 0);
@@ -168,14 +173,16 @@ export default function Dashboard() {
                       <p className="text-sm font-bold truncate text-foreground">{renewal.domainName}</p>
                       <p className="text-xs text-muted-foreground mt-0.5">{renewal.expiryDate}</p>
                     </div>
-                    <Badge 
-                      className={cn(
-                        "text-[10px] font-bold px-2 py-0.5",
-                        new Date(renewal.expiryDate!) < new Date() ? 'bg-destructive/10 text-destructive border-destructive/20' : 'bg-emerald-500/10 text-emerald-600 border-emerald-500/20'
-                      )}
-                    >
-                      {new Date(renewal.expiryDate!) < new Date() ? 'EXPIRED' : 'ACTIVE'}
-                    </Badge>
+                    {isMounted && (
+                      <Badge 
+                        className={cn(
+                          "text-[10px] font-bold px-2 py-0.5",
+                          new Date(renewal.expiryDate!) < new Date() ? 'bg-destructive/10 text-destructive border-destructive/20' : 'bg-emerald-500/10 text-emerald-600 border-emerald-500/20'
+                        )}
+                      >
+                        {new Date(renewal.expiryDate!) < new Date() ? 'EXPIRED' : 'ACTIVE'}
+                      </Badge>
+                    )}
                   </div>
                 ))}
                 {upcomingRenewals.length === 0 && (
