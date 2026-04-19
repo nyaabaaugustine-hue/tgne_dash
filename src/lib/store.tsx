@@ -3,7 +3,6 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { AppData, Client, Website, Credential, Task, Reminder, Payment } from './types';
 import { useRouter } from 'next/navigation';
-import * as actions from '@/lib/actions';
 import { toast } from '@/hooks/use-toast';
 
 interface AppContextType {
@@ -27,8 +26,34 @@ interface AppContextType {
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
-
 const ADMIN_PIN = "1234567a";
+
+// Simple fetch helpers
+const api = {
+  get: (path: string) =>
+    fetch(path).then(r => {
+      if (!r.ok) throw new Error(`GET ${path} failed: ${r.status}`);
+      return r.json();
+    }),
+  post: (path: string, body: unknown) =>
+    fetch(path, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    }),
+  put: (path: string, body: unknown) =>
+    fetch(path, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    }),
+  del: (path: string, body: unknown) =>
+    fetch(path, {
+      method: 'DELETE',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    }),
+};
 
 export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [isAuthorized, setIsAuthorized] = useState(false);
@@ -43,29 +68,26 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   });
   const router = useRouter();
 
+  const refreshData = async () => {
+    const result = await api.get('/api/data');
+    setData(result);
+  };
+
   useEffect(() => {
-    const authSession = localStorage.getItem('tgne_auth_session');
-    if (authSession === 'true') {
+    if (localStorage.getItem('tgne_auth_session') === 'true') {
       setIsAuthorized(true);
     }
 
-    const loadInitialData = async () => {
-      try {
-        const result = await actions.fetchAllData();
-        setData(result);
-      } catch (error) {
-        console.error("Failed to load dashboard data:", error);
+    refreshData()
+      .catch(() =>
         toast({
           variant: 'destructive',
           title: 'Connection Error',
           description: 'Could not load data from the database. Check your connection.',
-        });
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    loadInitialData();
+        })
+      )
+      .finally(() => setIsLoading(false));
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const verifyPin = (pin: string) => {
@@ -83,148 +105,163 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     router.push('/tgnes');
   };
 
-  const refreshData = async () => {
-    const updated = await actions.fetchAllData();
-    setData(updated);
-  };
-
-  const handleError = (context: string, error: unknown) => {
-    console.error(`Persistence Error (${context}):`, error);
+  const handleError = (ctx: string, error: unknown) => {
+    console.error(`[${ctx}]`, error);
     toast({
       variant: 'destructive',
       title: 'Save Failed',
-      description: `Could not complete "${context}". Please try again.`,
+      description: `Could not complete "${ctx}". Please try again.`,
     });
   };
 
+  // ── Clients ──────────────────────────────────────────────
   const addClient = async (client: Partial<Client>) => {
     try {
-      await actions.createClient(client);
+      const r = await api.post('/api/clients', client);
+      if (!r.ok) throw new Error(await r.text());
       await refreshData();
-    } catch (error) {
-      handleError('addClient', error);
+    } catch (e) {
+      handleError('addClient', e);
     }
   };
 
   const updateClient = async (id: string, client: Partial<Client>) => {
     try {
-      await actions.updateClientAction(id, client);
+      const r = await api.put('/api/clients', { id, ...client });
+      if (!r.ok) throw new Error(await r.text());
       await refreshData();
-    } catch (error) {
-      handleError('updateClient', error);
+    } catch (e) {
+      handleError('updateClient', e);
     }
   };
 
   const deleteClient = async (id: string) => {
     try {
-      await actions.deleteClientAction(id);
+      const r = await api.del('/api/clients', { id });
+      if (!r.ok) throw new Error(await r.text());
       await refreshData();
-    } catch (error) {
-      handleError('deleteClient', error);
+    } catch (e) {
+      handleError('deleteClient', e);
     }
   };
 
+  // ── Websites ─────────────────────────────────────────────
   const addWebsite = async (website: Partial<Website>) => {
     try {
-      await actions.createWebsite(website);
+      const r = await api.post('/api/websites', website);
+      if (!r.ok) throw new Error(await r.text());
       await refreshData();
-    } catch (error) {
-      handleError('addWebsite', error);
+    } catch (e) {
+      handleError('addWebsite', e);
     }
   };
 
+  // ── Credentials ──────────────────────────────────────────
   const addCredential = async (credential: Partial<Credential>) => {
     try {
-      await actions.createCredential(credential);
+      const r = await api.post('/api/credentials', credential);
+      if (!r.ok) throw new Error(await r.text());
       await refreshData();
-    } catch (error) {
-      handleError('addCredential', error);
+    } catch (e) {
+      handleError('addCredential', e);
     }
   };
 
+  // ── Tasks ────────────────────────────────────────────────
   const addTask = async (task: Partial<Task>) => {
     try {
-      await actions.createTask(task);
+      const r = await api.post('/api/tasks', task);
+      if (!r.ok) throw new Error(await r.text());
       await refreshData();
-    } catch (error) {
-      handleError('addTask', error);
+    } catch (e) {
+      handleError('addTask', e);
     }
   };
 
   const updateTask = async (id: string, status: Task['status']) => {
     try {
-      await actions.updateTaskAction(id, status);
+      const r = await api.put('/api/tasks', { id, status });
+      if (!r.ok) throw new Error(await r.text());
       await refreshData();
-    } catch (error) {
-      handleError('updateTask', error);
+    } catch (e) {
+      handleError('updateTask', e);
     }
   };
 
+  // ── Reminders ────────────────────────────────────────────
   const addReminder = async (reminder: Partial<Reminder>) => {
     try {
-      await actions.createReminder(reminder);
+      const r = await api.post('/api/reminders', reminder);
+      if (!r.ok) throw new Error(await r.text());
       await refreshData();
-    } catch (error) {
-      handleError('addReminder', error);
+    } catch (e) {
+      handleError('addReminder', e);
     }
   };
 
   const deleteReminder = async (id: string) => {
     try {
-      await actions.deleteReminderAction(id);
+      const r = await api.del('/api/reminders', { id });
+      if (!r.ok) throw new Error(await r.text());
       await refreshData();
-    } catch (error) {
-      handleError('deleteReminder', error);
+    } catch (e) {
+      handleError('deleteReminder', e);
     }
   };
 
+  // ── Payments ─────────────────────────────────────────────
   const addPayment = async (payment: Partial<Payment>) => {
     try {
-      await actions.createPayment(payment);
+      const r = await api.post('/api/payments', payment);
+      if (!r.ok) throw new Error(await r.text());
       await refreshData();
-    } catch (error) {
-      handleError('addPayment', error);
+    } catch (e) {
+      handleError('addPayment', e);
     }
   };
 
   const updatePayment = async (id: string, updates: Partial<Payment>) => {
     try {
-      await actions.updatePaymentAction(id, updates);
+      const r = await api.put('/api/payments', { id, ...updates });
+      if (!r.ok) throw new Error(await r.text());
       await refreshData();
-    } catch (error) {
-      handleError('updatePayment', error);
+    } catch (e) {
+      handleError('updatePayment', e);
     }
   };
 
   const deletePayment = async (id: string) => {
     try {
-      await actions.deletePaymentAction(id);
+      const r = await api.del('/api/payments', { id });
+      if (!r.ok) throw new Error(await r.text());
       await refreshData();
-    } catch (error) {
-      handleError('deletePayment', error);
+    } catch (e) {
+      handleError('deletePayment', e);
     }
   };
 
   return (
-    <AppContext.Provider value={{ 
-      data, 
-      isLoading,
-      isAuthorized,
-      verifyPin,
-      logout,
-      addClient, 
-      updateClient, 
-      deleteClient, 
-      addWebsite, 
-      addCredential, 
-      addTask, 
-      updateTask,
-      addReminder,
-      deleteReminder,
-      addPayment,
-      updatePayment,
-      deletePayment
-    }}>
+    <AppContext.Provider
+      value={{
+        data,
+        isLoading,
+        isAuthorized,
+        verifyPin,
+        logout,
+        addClient,
+        updateClient,
+        deleteClient,
+        addWebsite,
+        addCredential,
+        addTask,
+        updateTask,
+        addReminder,
+        deleteReminder,
+        addPayment,
+        updatePayment,
+        deletePayment,
+      }}
+    >
       {children}
     </AppContext.Provider>
   );
@@ -232,6 +269,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
 export const useApp = () => {
   const context = useContext(AppContext);
-  if (!context) throw new Error("useApp must be used within AppProvider");
+  if (!context) throw new Error('useApp must be used within AppProvider');
   return context;
 };
