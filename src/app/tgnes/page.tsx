@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { useApp } from '@/lib/store';
-import { ShieldAlert, ShieldCheck, Lock, ArrowRight, Loader2, Zap, CheckCircle2 } from 'lucide-react';
+import { ShieldAlert, ShieldCheck, Lock, ArrowRight, Loader2, Zap, CheckCircle2, Fingerprint } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent } from '@/components/ui/card';
@@ -29,13 +29,11 @@ export default function AdminPinPage() {
     setIsVerifying(true);
     setError(false);
 
-    // Artificial delay for premium feel and identity verification simulation
     await new Promise(resolve => setTimeout(resolve, 1500));
 
     if (verifyPin(pin)) {
       setIsSuccess(true);
       setIsVerifying(false);
-      // Wait for the success animation to be seen
       setTimeout(() => {
         router.push('/');
       }, 2000);
@@ -51,192 +49,156 @@ export default function AdminPinPage() {
 
   return (
     <div className="min-h-screen bg-[#02040a] flex items-center justify-center p-4 relative overflow-hidden">
-      {/* Success Notification - Slides in from the top */}
-      <div className={cn(
-        "fixed top-8 left-1/2 -translate-x-1/2 z-[100] transition-all duration-700 ease-out flex items-center gap-4 px-6 py-4 rounded-2xl border bg-black/80 backdrop-blur-2xl shadow-[0_0_50px_rgba(16,185,129,0.3)] border-emerald-500/50",
-        isSuccess ? "translate-y-0 opacity-100" : "-translate-y-32 opacity-0"
-      )}>
-        <div className="bg-emerald-500/20 p-2 rounded-xl border border-emerald-500/30">
-          <CheckCircle2 className="text-emerald-500 animate-pulse" size={24} />
-        </div>
-        <div>
-          <p className="text-[10px] font-black text-emerald-500 uppercase tracking-[0.3em]">Identity Verified</p>
-          <p className="text-white font-bold text-sm">ACCESS GRANTED. INITIALIZING CORE...</p>
-        </div>
-      </div>
-
-      {/* Premium Background Image */}
+      {/* Animated Background */}
       <div className="absolute inset-0 z-0">
         <Image 
           src={bgUrl} 
-          alt="Security Background" 
+          alt="Background" 
           fill
-          className="object-cover"
+          className="object-cover opacity-60"
           priority
         />
+        <div className="absolute inset-0 bg-gradient-to-b from-black/40 via-black/20 to-black/60" />
       </div>
 
-      {/* Dynamic Background Effects */}
-      <div className="absolute top-[-20%] left-[-10%] w-[60%] h-[60%] bg-primary/10 rounded-full blur-[140px] animate-pulse z-1" />
-      <div className="absolute bottom-[-20%] right-[-10%] w-[60%] h-[60%] bg-accent/10 rounded-full blur-[140px] animate-pulse [animation-delay:3s] z-1" />
+      {/* Floating Orbs */}
+      <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-primary/20 rounded-full blur-[120px] animate-pulse" />
+      <div className="absolute bottom-1/4 right-1/4 w-80 h-80 bg-blue-500/15 rounded-full blur-[100px] animate-pulse [animation-delay:2s]" />
 
-      <div className="w-full max-w-md z-10">
-        <div className="flex flex-col items-center mb-10 animate-in fade-in slide-in-from-top-12 duration-1000">
-          <div className="relative w-24 h-24 mb-6 group cursor-default">
-            <div className="absolute inset-0 bg-primary/40 rounded-3xl blur-2xl group-hover:bg-primary/60 transition-all duration-700 animate-pulse" />
-            <div className="relative w-full h-full bg-white rounded-3xl border border-white/20 p-4 shadow-2xl flex items-center justify-center overflow-hidden transition-transform duration-500 group-hover:scale-105">
-              <Image 
-                src={logoUrl} 
-                alt="TGNE Logo" 
-                fill 
-                className="object-contain p-3"
-                priority
-              />
-            </div>
-            <div className="absolute -bottom-2 -right-2 bg-primary text-white p-1.5 rounded-lg shadow-xl animate-bounce">
-              <ShieldCheck size={16} />
-            </div>
-          </div>
-        <h1 className="text-5xl font-black tracking-tighter text-white text-center drop-shadow-2xl">
-            TGNE <span className="text-primary italic">CORE</span>
-          </h1>
-        <div className="flex items-center gap-2 mt-4 px-4 py-1.5 rounded-full bg-white/5 border border-white/10 backdrop-blur-md">
-            <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-            <p className="text-[10px] text-muted-foreground font-bold tracking-[0.3em] uppercase">
-              Encrypted Session Path
-            </p>
-          </div>
-        </div>
+      {/* Success Banner */}
+      <div className={cn(
+        "fixed top-6 left-1/2 -translate-x-1/2 z-[100] transition-all duration-700 ease-out flex items-center gap-3 px-5 py-3 rounded-full border bg-black/90 backdrop-blur-xl shadow-[0_0_40px_rgba(16,185,129,0.4)] border-emerald-500/60",
+        isSuccess ? "translate-y-0 opacity-100" : "-translate-y-24 opacity-0"
+      )}>
+        <CheckCircle2 className="text-emerald-400" size={20} />
+        <span className="text-emerald-400 font-bold text-sm tracking-wide">ACCESS GRANTED</span>
+      </div>
 
-        <Card className={cn(
-        "glass-morphism border-slate-200 bg-white/70 backdrop-blur-xl overflow-hidden transition-all duration-500",
-        error ? "border-red-500/50 shadow-[0_0_60px_rgba(239,68,68,0.2)] animate-shake" : "shadow-[0_20px_50px_rgba(0,0,0,0.1)]",
-          isSuccess && "border-emerald-500/50 shadow-[0_0_60px_rgba(16,185,129,0.3)]"
-        )}>
-          <CardContent className="p-10 relative">
-            {/* Scanning line animation */}
-            <div className="absolute top-0 left-0 w-full h-[1px] bg-gradient-to-r from-transparent via-primary/50 to-transparent animate-scan z-20" />
-            
-            <form onSubmit={handleSubmit} className="space-y-8 relative z-10">
-              <div className="space-y-3 text-center">
-                <div className="flex justify-center mb-2">
-                  <div className={cn(
-                    "p-3 rounded-2xl border transition-colors duration-500",
-                    isSuccess ? "bg-emerald-500/10 border-emerald-500/20" : "bg-primary/10 border-primary/20"
-                  )}>
-                    {isSuccess ? (
-                      <CheckCircle2 className="text-emerald-500 animate-in zoom-in duration-500" size={40} />
-                    ) : error ? (
-                      <ShieldAlert className="text-red-500 animate-bounce" size={40} />
-                    ) : isVerifying ? (
-                      <Loader2 className="text-primary animate-spin" size={40} />
-                    ) : (
-                      <Lock className="text-primary/80 animate-pulse" size={40} />
-                    )}
-                  </div>
-                </div>
-                <h2 className="text-2xl font-bold text-slate-900 tracking-tight">
-                  {isSuccess ? "Identity Verified" : "Security Access"}
-                </h2>
-                <p className="text-xs text-muted-foreground font-medium">
-                  {isSuccess ? "Initializing administrator dashboard..." : "Verify your administrative credentials to continue"}
-                </p>
-              </div>
-
-              <div className="relative group">
-                <div className={cn(
-                  "absolute -inset-1 rounded-xl blur transition duration-1000",
-                  isSuccess ? "bg-emerald-500/40 opacity-100" : "bg-gradient-to-r from-primary/20 to-accent/20 opacity-25 group-focus-within:opacity-100"
-                )}></div>
-                <Input
-                  type="password"
-                  value={pin}
-                  onChange={(e) => setPin(e.target.value)}
-                  placeholder="••••••••"
-                  className={cn(
-                    "relative h-20 bg-white border-slate-200 text-center text-5xl text-slate-900 tracking-[0.6em] focus:ring-primary focus:border-primary/50 transition-all duration-500 placeholder:tracking-normal font-mono",
-                    error && "border-red-500/50 focus:ring-red-500 focus:border-red-500",
-                    isSuccess && "border-emerald-500/50 text-emerald-500",
-                    "rounded-xl shadow-inner"
-                  )}
-                  autoFocus
-                  disabled={isVerifying || isSuccess}
+      {/* Main Card */}
+      <Card className={cn(
+        "w-full max-w-md relative z-10 transition-all duration-700",
+        "bg-white/5 backdrop-blur-2xl border-white/10",
+        error ? "animate-shake border-red-500/30" : "shadow-[0_25px_60px_rgba(0,0,0,0.5)]",
+        isSuccess && "border-emerald-500/30 shadow-[0_0_60px_rgba(16,185,129,0.3)]"
+      )}>
+        <CardContent className="p-8 sm:p-12">
+          {/* Logo Section */}
+          <div className="text-center mb-10">
+            <div className="relative w-20 h-20 mx-auto mb-4">
+              <div className="absolute inset-0 bg-gradient-to-br from-primary to-blue-500 rounded-2xl blur-lg opacity-50" />
+              <div className="relative w-full h-full bg-white rounded-2xl flex items-center justify-center overflow-hidden shadow-xl">
+                <Image 
+                  src={logoUrl} 
+                  alt="TGNE" 
+                  fill 
+                  className="object-contain p-3"
                 />
               </div>
+            </div>
+            <h1 className="text-4xl font-black text-white tracking-tight">
+              TGNE <span className="text-primary">CORE</span>
+            </h1>
+            <p className="text-white/50 text-xs mt-2 tracking-[0.3em] uppercase">Admin Access</p>
+          </div>
 
-              {error && (
-                <div className="flex items-center justify-center gap-2 text-red-400 animate-in fade-in zoom-in-95 duration-300">
-                  <Zap size={14} className="animate-pulse" />
-                  <p className="text-[10px] font-black uppercase tracking-[0.2em]">
-                    Identity Verification Failed
-                  </p>
-                </div>
+          {/* Icon Indicator */}
+          <div className="flex justify-center mb-6">
+            <div className={cn(
+              "p-4 rounded-2xl transition-all duration-500",
+              isSuccess ? "bg-emerald-500/20" : error ? "bg-red-500/20" : "bg-white/10"
+            )}>
+              {isSuccess ? (
+                <CheckCircle2 className="text-emerald-400" size={32} />
+              ) : error ? (
+                <ShieldAlert className="text-red-400" size={32} />
+              ) : isVerifying ? (
+                <Loader2 className="text-white animate-spin" size={32} />
+              ) : (
+                <Fingerprint className="text-white/70" size={32} />
               )}
+            </div>
+          </div>
 
-              <Button 
-                type="submit" 
-                disabled={pin.length < 1 || isVerifying || isSuccess}
+          {/* Status Text */}
+          <p className={cn(
+            "text-center text-sm mb-8 transition-colors duration-300",
+            isSuccess ? "text-emerald-400" : error ? "text-red-400" : "text-white/60"
+          )}>
+            {isSuccess ? "Verified • Redirecting..." : 
+             error ? "Invalid PIN • Try again" : 
+             isVerifying ? "Verifying..." : "Enter your PIN code"}
+          </p>
+
+          <form onSubmit={handleSubmit} className="space-y-6">
+            <div className="relative">
+              <Input
+                type="password"
+                value={pin}
+                onChange={(e) => setPin(e.target.value)}
+                placeholder="••••••••"
                 className={cn(
-                  "w-full h-16 premium-button font-black text-xl group relative overflow-hidden transition-all duration-500",
-                  isSuccess ? "bg-emerald-500 hover:bg-emerald-600 text-white" : "bg-primary hover:bg-primary/90 text-white",
-                  isVerifying && "opacity-80"
+                  "h-14 bg-white/5 border-white/10 text-white text-center text-2xl tracking-[0.5em] font-mono placeholder:text-white/30 placeholder:tracking-normal",
+                  "focus:ring-2 focus:ring-primary focus:border-primary/50",
+                  error && "border-red-500/50 focus:ring-red-500",
+                  isSuccess && "border-emerald-500/50",
+                  "rounded-xl"
                 )}
-              >
-                {isSuccess ? (
-                  <span className="flex items-center gap-3">
-                    <CheckCircle2 size={24} />
-                    Access Granted
-                  </span>
-                ) : isVerifying ? (
-                  <span className="flex items-center gap-3">
-                    <Loader2 className="animate-spin" size={20} />
-                    Authenticating...
-                  </span>
-                ) : (
-                  <span className="flex items-center gap-2">
-                    Initialize Core
-                    <ArrowRight className="group-hover:translate-x-1.5 transition-transform duration-300" size={24} />
-                  </span>
-                )}
-                {/* Button shine effect */}
-                <div className="absolute top-0 -left-full w-full h-full bg-gradient-to-r from-transparent via-white/10 to-transparent group-hover:left-full transition-all duration-1000" />
-              </Button>
-            </form>
-          </CardContent>
-        </Card>
+                autoFocus
+                disabled={isVerifying || isSuccess}
+              />
+            </div>
 
-        <div className="mt-10 flex items-center justify-center gap-8 opacity-40 hover:opacity-100 transition-opacity duration-500 text-white/60">
-          <div className="flex items-center gap-2">
-            <ShieldCheck size={16} className="text-white" />
-            <span className="text-[9px] text-white font-black tracking-[0.3em] uppercase">secure</span>
+            <Button 
+              type="submit" 
+              disabled={pin.length < 1 || isVerifying || isSuccess}
+              className={cn(
+                "w-full h-12 font-semibold transition-all duration-300",
+                isSuccess ? "bg-emerald-500 hover:bg-emerald-600" : "bg-primary hover:bg-primary/90",
+                isVerifying && "opacity-50 cursor-wait"
+              )}
+            >
+              {isVerifying ? (
+                <span className="flex items-center gap-2 justify-center">
+                  <Loader2 className="animate-spin" size={18} />
+                  Verifying...
+                </span>
+              ) : isSuccess ? (
+                <span className="flex items-center gap-2 justify-center">
+                  <CheckCircle2 size={18} />
+                  Welcome Back
+                </span>
+              ) : (
+                <span className="flex items-center gap-2 justify-center">
+                  Unlock Dashboard
+                  <ArrowRight size={18} />
+                </span>
+              )}
+            </Button>
+          </form>
+
+          {/* Security Badge */}
+          <div className="mt-8 flex items-center justify-center gap-4 text-white/30">
+            <div className="flex items-center gap-1.5">
+              <ShieldCheck size={12} />
+              <span className="text-[10px] uppercase tracking-wider">Secure</span>
+            </div>
+            <div className="h-3 w-[1px] bg-white/20" />
+            <div className="flex items-center gap-1.5">
+              <Lock size={12} />
+              <span className="text-[10px] uppercase tracking-wider">Encrypted</span>
+            </div>
           </div>
-          <div className="h-4 w-[1px] bg-white/20" />
-          <div className="flex items-center gap-2">
-            <Lock size={16} className="text-white" />
-            <span className="text-[9px] text-white font-black tracking-[0.3em] uppercase">AES-GCM</span>
-          </div>
-        </div>
-      </div>
+        </CardContent>
+      </Card>
 
       <style jsx global>{`
         @keyframes shake {
           0%, 100% { transform: translateX(0); }
-          20% { transform: translateX(-10px); }
-          40% { transform: translateX(10px); }
-          60% { transform: translateX(-10px); }
-          80% { transform: translateX(10px); }
-        }
-        @keyframes scan {
-          0% { transform: translateY(0); opacity: 0; }
-          10% { opacity: 1; }
-          90% { opacity: 1; }
-          100% { transform: translateY(400px); opacity: 0; }
+          20%, 60% { transform: translateX(-6px); }
+          40%, 80% { transform: translateX(6px); }
         }
         .animate-shake {
-          animation: shake 0.4s cubic-bezier(.36,.07,.19,.97) both;
-        }
-        .animate-scan {
-          animation: scan 3s linear infinite;
+          animation: shake 0.4s ease-in-out;
         }
       `}</style>
     </div>
