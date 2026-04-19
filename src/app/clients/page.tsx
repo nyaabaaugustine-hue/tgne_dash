@@ -167,7 +167,7 @@ export default function ClientsPage() {
                 New Client
               </Button>
             </DialogTrigger>
-            <DialogContent className="sm:max-w-[500px]">
+            <DialogContent className="w-[95vw] sm:max-w-[500px] max-h-[90vh] overflow-y-auto">
               <DialogHeader>
                 <DialogTitle>Onboard New Partner</DialogTitle>
                 <DialogDescription>Add a new client to your management system.</DialogDescription>
@@ -312,7 +312,7 @@ export default function ClientsPage() {
             setLogoPreview(null);
           }
         }}>
-          <SheetContent className="sm:max-w-[600px] overflow-y-auto">
+          <SheetContent className="w-full sm:max-w-[600px] overflow-y-auto">
             {selectedClient && (
               <div className="space-y-8 pb-10">
                 <SheetHeader>
@@ -348,11 +348,6 @@ export default function ClientsPage() {
                         <>
                           <Button variant="secondary" size="icon" onClick={startEditing} title="Edit Client">
                             <Edit2 size={18} />
-                          </Button>
-                          <Button variant="secondary" size="icon" asChild title="Schedule Call">
-                            <Link href="/schedule">
-                              <CalendarDays size={18} />
-                            </Link>
                           </Button>
                           <Button variant="destructive" size="icon" onClick={() => { deleteClient(selectedClient.id); setSelectedClient(null); }}>
                             <Trash2 size={18} />

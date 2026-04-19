@@ -70,11 +70,10 @@ export default function AdminPinPage() {
         <Image 
           src={bgUrl} 
           alt="Security Background" 
-          fill 
-          className="object-cover opacity-60"
+          fill
+          className="object-cover"
           priority
         />
-        <div className="absolute inset-0 bg-gradient-to-b from-[#02040a]/90 via-[#02040a]/40 to-[#02040a]/95" />
       </div>
 
       {/* Dynamic Background Effects */}
@@ -98,10 +97,10 @@ export default function AdminPinPage() {
               <ShieldCheck size={16} />
             </div>
           </div>
-          <h1 className="text-5xl font-black tracking-tighter text-white text-center drop-shadow-2xl">
+        <h1 className="text-5xl font-black tracking-tighter text-black text-center drop-shadow-2xl">
             TGNE <span className="text-primary italic">CORE</span>
           </h1>
-          <div className="flex items-center gap-2 mt-4 px-4 py-1.5 rounded-full bg-white/5 border border-white/10 backdrop-blur-md">
+        <div className="flex items-center gap-2 mt-4 px-4 py-1.5 rounded-full bg-white/5 border border-white/10 backdrop-blur-md">
             <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
             <p className="text-[10px] text-muted-foreground font-bold tracking-[0.3em] uppercase">
               Encrypted Session Path
@@ -110,8 +109,8 @@ export default function AdminPinPage() {
         </div>
 
         <Card className={cn(
-          "glass-morphism border-white/10 bg-black/60 backdrop-blur-3xl overflow-hidden transition-all duration-500",
-          error ? "border-red-500/50 shadow-[0_0_60px_rgba(239,68,68,0.3)] animate-shake" : "shadow-[0_20px_50px_rgba(0,0,0,0.5)]",
+        "glass-morphism border-slate-200 bg-white/70 backdrop-blur-xl overflow-hidden transition-all duration-500",
+        error ? "border-red-500/50 shadow-[0_0_60px_rgba(239,68,68,0.2)] animate-shake" : "shadow-[0_20px_50px_rgba(0,0,0,0.1)]",
           isSuccess && "border-emerald-500/50 shadow-[0_0_60px_rgba(16,185,129,0.3)]"
         )}>
           <CardContent className="p-10 relative">
@@ -136,7 +135,7 @@ export default function AdminPinPage() {
                     )}
                   </div>
                 </div>
-                <h2 className="text-2xl font-bold text-white tracking-tight">
+                <h2 className="text-2xl font-bold text-slate-900 tracking-tight">
                   {isSuccess ? "Identity Verified" : "Security Access"}
                 </h2>
                 <p className="text-xs text-muted-foreground font-medium">
@@ -155,7 +154,7 @@ export default function AdminPinPage() {
                   onChange={(e) => setPin(e.target.value)}
                   placeholder="••••••••"
                   className={cn(
-                    "relative h-20 bg-black/80 border-white/5 text-center text-5xl text-white tracking-[0.6em] focus:ring-primary focus:border-primary/50 transition-all duration-500 placeholder:tracking-normal font-mono",
+                    "relative h-20 bg-white border-slate-200 text-center text-5xl text-slate-900 tracking-[0.6em] focus:ring-primary focus:border-primary/50 transition-all duration-500 placeholder:tracking-normal font-mono",
                     error && "border-red-500/50 focus:ring-red-500 focus:border-red-500",
                     isSuccess && "border-emerald-500/50 text-emerald-500",
                     "rounded-xl shadow-inner"
@@ -206,7 +205,7 @@ export default function AdminPinPage() {
           </CardContent>
         </Card>
 
-        <div className="mt-10 flex items-center justify-center gap-8 opacity-40 hover:opacity-100 transition-opacity duration-500">
+        <div className="mt-10 flex items-center justify-center gap-8 opacity-40 hover:opacity-100 transition-opacity duration-500 text-white/60">
           <div className="flex items-center gap-2">
             <ShieldCheck size={16} className="text-white" />
             <span className="text-[9px] text-white font-black tracking-[0.3em] uppercase">secure</span>

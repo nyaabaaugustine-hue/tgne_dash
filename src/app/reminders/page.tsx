@@ -11,13 +11,10 @@ import {
   Settings,
   CalendarDays,
   Check,
-  Calendar as GoogleCalendarIcon,
-  ChevronRight,
   ShieldCheck,
   Server,
   Plus,
-  Trash2,
-  Sparkles
+  Trash2
 } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -139,8 +136,8 @@ export default function RemindersPage() {
                   asChild
                 >
                   <a href={generateGoogleCalendarUrl(reminder)} target="_blank" rel="noopener noreferrer">
-                    <GoogleCalendarIcon size={14} />
-                    Sync GCal
+                    <CalendarDays size={14} />
+                    Export
                   </a>
                 </Button>
                 <Button 
@@ -175,13 +172,6 @@ export default function RemindersPage() {
           </div>
           
           <div className="flex items-center gap-3">
-            <Button variant="outline" className="gap-2 border-primary/30 text-primary font-bold hidden lg:flex" asChild>
-              <Link href="/schedule">
-                <CalendarDays size={18} />
-                Schedule via Cal.com
-              </Link>
-            </Button>
-
             <Dialog open={isAddOpen} onOpenChange={setIsAddOpen}>
               <DialogTrigger asChild>
                 <Button className="gap-2 shadow-lg premium-button bg-primary text-primary-foreground">
@@ -189,7 +179,7 @@ export default function RemindersPage() {
                   New Reminder
                 </Button>
               </DialogTrigger>
-              <DialogContent className="sm:max-w-[425px]">
+              <DialogContent className="w-[95vw] sm:max-w-[425px] max-h-[90vh] overflow-y-auto">
                 <DialogHeader>
                   <DialogTitle>Schedule Alert</DialogTitle>
                 </DialogHeader>
@@ -222,21 +212,10 @@ export default function RemindersPage() {
                   </div>
                   <div className="pt-2 border-t mt-4 flex flex-col gap-2">
                     <Button type="submit" className="w-full">Create Local Alert</Button>
-                    <Button type="button" variant="ghost" className="w-full text-xs text-muted-foreground gap-2" asChild>
-                      <Link href="/schedule">
-                        <Sparkles size={14} className="text-primary" />
-                        Or book via Cal.com
-                      </Link>
-                    </Button>
                   </div>
                 </form>
               </DialogContent>
             </Dialog>
-
-            <Badge className="bg-emerald-500/10 text-emerald-500 border-emerald-500/20 py-1.5 px-4 font-bold hidden sm:flex gap-2">
-              <Check size={14} />
-              G-Cal Sync Ready
-            </Badge>
           </div>
         </div>
 
@@ -261,28 +240,6 @@ export default function RemindersPage() {
             {mounted && <ReminderList reminders={groups.hosting} />}
           </TabsContent>
         </Tabs>
-
-        <Card className="bg-primary/5 border-primary/20 rounded-3xl overflow-hidden relative">
-          <div className="absolute right-0 top-0 h-full w-1/3 bg-gradient-to-l from-primary/10 to-transparent pointer-events-none" />
-          <CardContent className="p-8 flex flex-col md:flex-row items-center gap-8">
-            <div className="p-4 bg-primary/20 rounded-3xl text-primary animate-pulse">
-              <GoogleCalendarIcon size={40} />
-            </div>
-            <div className="flex-1 text-center md:text-left">
-              <h3 className="text-xl font-bold">Smart Calendar Integration</h3>
-              <p className="text-muted-foreground mt-2 leading-relaxed">
-                TGNE generates optimized tracking links for Google Calendar. 
-                For complex strategy calls or project renewals that require live discussion, use the <strong>Cal.com</strong> integration.
-              </p>
-            </div>
-            <Button variant="outline" className="gap-2 border-primary/30 text-primary font-bold px-8 h-12 rounded-2xl" asChild>
-              <Link href="/schedule">
-                Open Scheduler
-                <ChevronRight size={18} />
-              </Link>
-            </Button>
-          </CardContent>
-        </Card>
       </div>
     </DashboardLayout>
   );

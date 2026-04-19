@@ -4,16 +4,7 @@
 import React, { createContext, useContext, useState, useEffect, useMemo } from 'react';
 import { AppData, Client, Website, Credential, Task, Reminder, Payment } from './types';
 import { useRouter } from 'next/navigation';
-import { useFirestore, useCollection } from '@/firebase';
-import { 
-  collection, 
-  doc, 
-  addDoc, 
-  updateDoc, 
-  deleteDoc, 
-} from 'firebase/firestore';
-import { errorEmitter } from '@/firebase/error-emitter';
-import { FirestorePermissionError } from '@/firebase/errors';
+import * as actions from '@/lib/actions';
 
 interface AppContextType {
   data: AppData;
@@ -41,34 +32,36 @@ const ADMIN_PIN = "1234567a";
 
 export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [isAuthorized, setIsAuthorized] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const [data, setData] = useState<AppData>({
+    clients: [],
+    websites: [],
+    credentials: [],
+    tasks: [],
+    reminders: [],
+    payments: [],
+  });
   const router = useRouter();
-  const db = useFirestore();
-
-  // Firestore Collections
-  const clientsColl = useCollection<Client>(db ? collection(db, 'clients') : null);
-  const websitesColl = useCollection<Website>(db ? collection(db, 'websites') : null);
-  const credentialsColl = useCollection<Credential>(db ? collection(db, 'credentials') : null);
-  const tasksColl = useCollection<Task>(db ? collection(db, 'tasks') : null);
-  const remindersColl = useCollection<Reminder>(db ? collection(db, 'reminders') : null);
-  const paymentsColl = useCollection<Payment>(db ? collection(db, 'payments') : null);
 
   useEffect(() => {
     const authSession = localStorage.getItem('tgne_auth_session');
     if (authSession === 'true') {
       setIsAuthorized(true);
     }
+
+    const loadInitialData = async () => {
+      try {
+        const result = await actions.fetchAllData();
+        setData(result);
+      } catch (error) {
+        console.error("Failed to load dashboard data:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    loadInitialData();
   }, []);
-
-  const data: AppData = useMemo(() => ({
-    clients: clientsColl.data || [],
-    websites: websitesColl.data || [],
-    credentials: credentialsColl.data || [],
-    tasks: tasksColl.data || [],
-    reminders: remindersColl.data || [],
-    payments: paymentsColl.data || [],
-  }), [clientsColl.data, websitesColl.data, credentialsColl.data, tasksColl.data, remindersColl.data, paymentsColl.data]);
-
-  const isLoading = clientsColl.loading || websitesColl.loading;
 
   const verifyPin = (pin: string) => {
     if (pin === ADMIN_PIN) {
@@ -85,82 +78,69 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     router.push('/tgnes');
   };
 
-  // Mutations
-  const addClient = (client: Partial<Client>) => {
-    if (!db) return;
-    addDoc(collection(db, 'clients'), {
-      ...client,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString()
-    }).catch(e => {
-      errorEmitter.emit('permission-error', new FirestorePermissionError({
-        path: 'clients', operation: 'create'
-      }));
-    });
+  const refreshData = async () => {
+    const updated = await actions.fetchAllData();
+    setData(updated);
   };
 
-  const updateClient = (id: string, client: Partial<Client>) => {
-    if (!db) return;
-    updateDoc(doc(db, 'clients', id), {
-      ...client,
-      updatedAt: new Date().toISOString()
-    });
+  const addClient = async (client: Partial<Client>) => {
+    await actions.createClient(client);
+    await refreshData();
   };
 
-  const deleteClient = (id: string) => {
-    if (!db) return;
-    deleteDoc(doc(db, 'clients', id));
+  const updateClient = async (id: string, client: Partial<Client>) => {
+    await actions.updateClientAction(id, client);
+    await refreshData();
   };
 
-  const addWebsite = (website: Partial<Website>) => {
-    if (!db) return;
-    addDoc(collection(db, 'websites'), website);
+  const deleteClient = async (id: string) => {
+    await actions.deleteClientAction(id);
+    await refreshData();
   };
 
-  const addCredential = (credential: Partial<Credential>) => {
-    if (!db) return;
-    addDoc(collection(db, 'credentials'), {
-      ...credential,
-      password: btoa(credential.password || '')
-    });
+  const addWebsite = async (website: Partial<Website>) => {
+    await actions.createWebsite(website);
+    await refreshData();
   };
 
-  const addTask = (task: Partial<Task>) => {
-    if (!db) return;
-    addDoc(collection(db, 'tasks'), task);
+  const addCredential = async (credential: Partial<Credential>) => {
+    await actions.createCredential(credential);
+    await refreshData();
   };
 
-  const updateTask = (id: string, status: Task['status']) => {
-    if (!db) return;
-    updateDoc(doc(db, 'tasks', id), { status });
+  const addTask = async (task: Partial<Task>) => {
+    await actions.createTask(task);
+    await refreshData();
   };
 
-  const addReminder = (reminder: Partial<Reminder>) => {
-    if (!db) return;
-    addDoc(collection(db, 'reminders'), reminder);
+  const updateTask = async (id: string, status: Task['status']) => {
+    await actions.updateTaskAction(id, status);
+    await refreshData();
   };
 
-  const deleteReminder = (id: string) => {
-    if (!db) return;
-    deleteDoc(doc(db, 'reminders', id));
+  const addReminder = async (reminder: Partial<Reminder>) => {
+    await actions.createReminder(reminder);
+    await refreshData();
   };
 
-  const addPayment = (payment: Partial<Payment>) => {
-    if (!db) return;
-    addDoc(collection(db, 'payments'), {
-      ...payment,
-      createdAt: new Date().toISOString()
-    });
+  const deleteReminder = async (id: string) => {
+    await actions.deleteReminderAction(id);
+    await refreshData();
   };
 
-  const updatePayment = (id: string, updates: Partial<Payment>) => {
-    if (!db) return;
-    updateDoc(doc(db, 'payments', id), updates);
+  const addPayment = async (payment: Partial<Payment>) => {
+    await actions.createPayment(payment);
+    await refreshData();
   };
 
-  const deletePayment = (id: string) => {
-    if (!db) return;
-    deleteDoc(doc(db, 'payments', id));
+  const updatePayment = async (id: string, updates: Partial<Payment>) => {
+    await actions.updatePaymentAction(id, updates);
+    await refreshData();
+  };
+
+  const deletePayment = async (id: string) => {
+    await actions.deletePaymentAction(id);
+    await refreshData();
   };
 
   return (

@@ -1,0 +1,77 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Client {
+  id           String       @id @default(cuid())
+  name         String
+  businessName String
+  phone        String?
+  email        String?
+  location     String?
+  avatarUrl    String?
+  notes        String?
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
+  websites     Website[]
+  credentials  Credential[]
+  tasks        Task[]
+  payments     Payment[]
+}
+
+model Website {
+  id              String   @id @default(cuid())
+  clientId        String
+  client          Client   @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  domainName      String
+  url             String?
+  hostingProvider String?
+  platform        String?
+  dateCreated     DateTime?
+  projectPrice    Float?
+  paymentStatus   String?
+  expiryDate      DateTime?
+}
+
+model Credential {
+  id          String @id @default(cuid())
+  clientId    String
+  client      Client @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  serviceName String
+  username    String
+  password    String
+  url         String?
+}
+
+model Task {
+  id          String   @id @default(cuid())
+  clientId    String
+  client      Client   @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  description String
+  status      String   @default("Pending")
+  dueDate     String?
+}
+
+model Reminder {
+  id      String   @id @default(cuid())
+  type    String
+  title   String
+  date    String
+  isRead  Boolean  @default(false)
+  details String?
+}
+
+model Payment {
+  id        String   @id @default(cuid())
+  clientId  String
+  client    Client   @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  amount    Float
+  status    String
+  date      String
+  createdAt DateTime @default(now())
+}
