@@ -4,6 +4,8 @@ export interface Client {
   businessName: string;
   phone: string;
   email: string;
+  location: string;
+  avatarUrl?: string;
   notes: string;
   createdAt: string;
 }

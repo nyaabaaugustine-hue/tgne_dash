@@ -1,0 +1,22 @@
+{
+  "placeholderImages": [
+    {
+      "id": "client-1",
+      "description": "Craft workshop aesthetic",
+      "imageUrl": "https://picsum.photos/seed/kofi/600/400",
+      "imageHint": "artisan workshop"
+    },
+    {
+      "id": "client-2",
+      "description": "Fresh bakery interior",
+      "imageUrl": "https://picsum.photos/seed/sarah/600/400",
+      "imageHint": "bakery interior"
+    },
+    {
+      "id": "client-3",
+      "description": "Luxury interior design",
+      "imageUrl": "https://picsum.photos/seed/marco/600/400",
+      "imageHint": "interior design"
+    }
+  ]
+}

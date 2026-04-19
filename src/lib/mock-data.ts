@@ -8,7 +8,9 @@ export const INITIAL_DATA: AppData = {
       businessName: 'Kofi\'s Crafts',
       phone: '+233 24 123 4567',
       email: 'kofi@crafts.com',
-      notes: 'Loves clean, modern designs.',
+      location: 'Accra, Ghana',
+      avatarUrl: 'https://picsum.photos/seed/kofi/400/300',
+      notes: 'Loves clean, modern designs and high-contrast visuals.',
       createdAt: '2023-10-01'
     },
     {
@@ -17,8 +19,21 @@ export const INITIAL_DATA: AppData = {
       businessName: 'Jenkins Bakery',
       phone: '+1 555 123 4567',
       email: 'sarah@bakery.com',
-      notes: 'Needs regular blog updates.',
+      location: 'Portland, OR',
+      avatarUrl: 'https://picsum.photos/seed/sarah/400/300',
+      notes: 'Needs regular blog updates and seasonal promotional banners.',
       createdAt: '2023-11-15'
+    },
+    {
+      id: 'c3',
+      name: 'Marco Rossi',
+      businessName: 'Rossi Interiors',
+      phone: '+39 02 123 4567',
+      email: 'marco@rossi.it',
+      location: 'Milan, Italy',
+      avatarUrl: 'https://picsum.photos/seed/marco/400/300',
+      notes: 'High-end furniture showroom. Requires high-res image optimization.',
+      createdAt: '2024-01-20'
     }
   ],
   websites: [
