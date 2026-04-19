@@ -1,7 +1,6 @@
-
 "use client";
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { DashboardLayout } from '@/components/layout/dashboard-layout';
 import { useApp } from '@/lib/store';
@@ -40,12 +39,17 @@ import { cn } from '@/lib/utils';
 export default function RemindersPage() {
   const { data, addReminder, deleteReminder } = useApp();
   const [isAddOpen, setIsAddOpen] = useState(false);
+  const [mounted, setMounted] = useState(false);
   const [newReminder, setNewReminder] = useState({
     type: 'Web Management' as any,
     title: '',
     date: new Date().toISOString().split('T')[0],
     details: ''
   });
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const allReminders = [...data.reminders].sort((a, b) => 
     new Date(a.date).getTime() - new Date(b.date).getTime()
@@ -100,7 +104,8 @@ export default function RemindersPage() {
   const ReminderList = ({ reminders }: { reminders: typeof allReminders }) => (
     <div className="space-y-4">
       {reminders.map((reminder) => {
-        const isUrgent = new Date(reminder.date) < new Date();
+        // Calculation is safe because we only render this list when mounted
+        const isUrgent = mounted && new Date(reminder.date) < new Date();
         return (
           <Card key={reminder.id} className={cn(
             "group overflow-hidden premium-card border-l-4",
@@ -244,16 +249,16 @@ export default function RemindersPage() {
           </TabsList>
 
           <TabsContent value="all">
-            <ReminderList reminders={groups.all} />
+            {mounted && <ReminderList reminders={groups.all} />}
           </TabsContent>
           <TabsContent value="web">
-            <ReminderList reminders={groups.web} />
+            {mounted && <ReminderList reminders={groups.web} />}
           </TabsContent>
           <TabsContent value="domain">
-            <ReminderList reminders={groups.domain} />
+            {mounted && <ReminderList reminders={groups.domain} />}
           </TabsContent>
           <TabsContent value="hosting">
-            <ReminderList reminders={groups.hosting} />
+            {mounted && <ReminderList reminders={groups.hosting} />}
           </TabsContent>
         </Tabs>
 
