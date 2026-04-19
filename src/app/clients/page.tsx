@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { DashboardLayout } from '@/components/layout/dashboard-layout';
@@ -20,7 +20,9 @@ import {
   CalendarDays,
   Edit2,
   Check,
-  X as CloseIcon
+  X as CloseIcon,
+  Upload,
+  ImageIcon
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -44,14 +46,18 @@ import {
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Client } from '@/lib/types';
+import { useToast } from '@/hooks/use-toast';
 
 export default function ClientsPage() {
   const { data, addClient, updateClient, deleteClient } = useApp();
+  const { toast } = useToast();
   const [searchTerm, setSearchTerm] = useState('');
   const [isAddOpen, setIsAddOpen] = useState(false);
   const [selectedClient, setSelectedClient] = useState<Client | null>(null);
   const [isEditing, setIsEditing] = useState(false);
   const [editData, setEditData] = useState<Partial<Client>>({});
+  const [logoPreview, setLogoPreview] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   
   const [newClient, setNewClient] = useState({
     name: '',
@@ -59,7 +65,8 @@ export default function ClientsPage() {
     email: '',
     phone: '',
     location: '',
-    notes: ''
+    notes: '',
+    avatarUrl: ''
   });
 
   const filteredClients = data.clients.filter(c => 
@@ -68,19 +75,51 @@ export default function ClientsPage() {
     c.location.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      if (file.size > 1024 * 1024) { // 1MB limit for Base64 storage
+        toast({
+          variant: "destructive",
+          title: "File too large",
+          description: "Please select an image smaller than 1MB."
+        });
+        return;
+      }
+
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        const base64String = reader.result as string;
+        setLogoPreview(base64String);
+        if (isEditing) {
+          setEditData(prev => ({ ...prev, avatarUrl: base64String }));
+        } else {
+          setNewClient(prev => ({ ...prev, avatarUrl: base64String }));
+        }
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
   const handleAddClient = (e: React.FormEvent) => {
     e.preventDefault();
     addClient({
       ...newClient,
-      avatarUrl: `https://picsum.photos/seed/${Math.random()}/600/400`
+      avatarUrl: newClient.avatarUrl || `https://picsum.photos/seed/${Math.random()}/600/400`
     });
     setIsAddOpen(false);
-    setNewClient({ name: '', businessName: '', email: '', phone: '', location: '', notes: '' });
+    setNewClient({ name: '', businessName: '', email: '', phone: '', location: '', notes: '', avatarUrl: '' });
+    setLogoPreview(null);
+    toast({
+      title: "Success",
+      description: "Partner onboarded successfully."
+    });
   };
 
   const startEditing = () => {
     if (selectedClient) {
       setEditData(selectedClient);
+      setLogoPreview(selectedClient.avatarUrl || null);
       setIsEditing(true);
     }
   };
@@ -91,6 +130,11 @@ export default function ClientsPage() {
       updateClient(selectedClient.id, editData);
       setSelectedClient({ ...selectedClient, ...editData } as Client);
       setIsEditing(false);
+      setLogoPreview(null);
+      toast({
+        title: "Success",
+        description: "Partner details updated."
+      });
     }
   };
 
@@ -110,7 +154,13 @@ export default function ClientsPage() {
             <p className="text-muted-foreground mt-2">The core of your agency's success.</p>
           </div>
           
-          <Dialog open={isAddOpen} onOpenChange={setIsAddOpen}>
+          <Dialog open={isAddOpen} onOpenChange={(open) => {
+            setIsAddOpen(open);
+            if (!open) {
+              setLogoPreview(null);
+              setNewClient(prev => ({ ...prev, avatarUrl: '' }));
+            }
+          }}>
             <DialogTrigger asChild>
               <Button size="lg" className="gap-2 premium-button bg-primary text-primary-foreground">
                 <Plus size={20} />
@@ -123,6 +173,30 @@ export default function ClientsPage() {
                 <DialogDescription>Add a new client to your management system.</DialogDescription>
               </DialogHeader>
               <form onSubmit={handleAddClient} className="space-y-4 py-4">
+                <div className="flex flex-col items-center gap-4 mb-4">
+                  <div 
+                    className="relative w-24 h-24 rounded-2xl border-2 border-dashed border-muted-foreground/20 flex items-center justify-center bg-muted/30 overflow-hidden cursor-pointer hover:border-primary transition-colors"
+                    onClick={() => fileInputRef.current?.click()}
+                  >
+                    {logoPreview ? (
+                      <Image src={logoPreview} alt="Logo preview" fill className="object-cover" />
+                    ) : (
+                      <div className="flex flex-col items-center gap-1 text-muted-foreground">
+                        <Upload size={20} />
+                        <span className="text-[10px] font-bold uppercase">Upload Logo</span>
+                      </div>
+                    )}
+                  </div>
+                  <input 
+                    type="file" 
+                    ref={fileInputRef} 
+                    className="hidden" 
+                    accept="image/*" 
+                    onChange={handleFileChange} 
+                  />
+                  <p className="text-[10px] text-muted-foreground text-center uppercase tracking-tighter">Recommended: Square PNG/JPG (Max 1MB)</p>
+                </div>
+
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label htmlFor="businessName">Business Name</Label>
@@ -235,6 +309,7 @@ export default function ClientsPage() {
           if (!open) {
             setSelectedClient(null);
             setIsEditing(false);
+            setLogoPreview(null);
           }
         }}>
           <SheetContent className="sm:max-w-[600px] overflow-y-auto">
@@ -265,7 +340,7 @@ export default function ClientsPage() {
                     <div className="flex gap-2">
                       {isEditing ? (
                         <>
-                          <Button variant="outline" size="icon" onClick={() => setIsEditing(false)} title="Cancel">
+                          <Button variant="outline" size="icon" onClick={() => { setIsEditing(false); setLogoPreview(null); }} title="Cancel">
                             <CloseIcon size={18} />
                           </Button>
                         </>
@@ -290,6 +365,29 @@ export default function ClientsPage() {
 
                 {isEditing ? (
                   <form onSubmit={handleUpdateClient} className="space-y-6">
+                    <div className="flex flex-col items-center gap-4 mb-4">
+                      <div 
+                        className="relative w-24 h-24 rounded-2xl border-2 border-dashed border-muted-foreground/20 flex items-center justify-center bg-muted/30 overflow-hidden cursor-pointer hover:border-primary transition-colors"
+                        onClick={() => fileInputRef.current?.click()}
+                      >
+                        {logoPreview ? (
+                          <Image src={logoPreview} alt="Logo preview" fill className="object-cover" />
+                        ) : (
+                          <div className="flex flex-col items-center gap-1 text-muted-foreground">
+                            <Upload size={20} />
+                            <span className="text-[10px] font-bold uppercase">Change Logo</span>
+                          </div>
+                        )}
+                      </div>
+                      <input 
+                        type="file" 
+                        ref={fileInputRef} 
+                        className="hidden" 
+                        accept="image/*" 
+                        onChange={handleFileChange} 
+                      />
+                    </div>
+
                     <div className="grid grid-cols-2 gap-4">
                       <div className="space-y-2">
                         <Label>Business Name</Label>
