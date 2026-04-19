@@ -6,6 +6,11 @@ import { Toaster } from '@/components/ui/toaster';
 export const metadata: Metadata = {
   title: 'TGNE | Premium Web Dev Dashboard',
   description: 'Manage your web development clients, credentials, and projects with ease.',
+  icons: {
+    icon: 'https://res.cloudinary.com/dwsl2ktt2/image/upload/v1776598078/download_kangs7.png',
+    shortcut: 'https://res.cloudinary.com/dwsl2ktt2/image/upload/v1776598078/download_kangs7.png',
+    apple: 'https://res.cloudinary.com/dwsl2ktt2/image/upload/v1776598078/download_kangs7.png',
+  },
 };
 
 export default function RootLayout({
