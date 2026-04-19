@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { useApp } from '@/lib/store';
-import { ShieldAlert, Lock, ArrowRight, Loader2, CheckCircle2, Fingerprint, Sparkles } from 'lucide-react';
+import { ShieldAlert, Lock, ArrowRight, Loader2, CheckCircle2, Fingerprint, Sparkles, Triangle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent } from '@/components/ui/card';
@@ -45,27 +45,39 @@ export default function AdminPinPage() {
   };
 
   const logoUrl = "https://res.cloudinary.com/dwsl2ktt2/image/upload/v1776598078/download_kangs7.png";
+  const bgUrl = "https://res.cloudinary.com/dwsl2ktt2/image/upload/v1776599742/upscaled_10x_back_ziilsg.png";
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-violet-400 via-purple-500 to-pink-500 flex items-center justify-center p-4 relative overflow-hidden">
-      {/* Vibrant Background Shapes */}
-      <div className="absolute top-10 left-10 w-40 h-40 bg-yellow-300 rounded-full blur-xl opacity-60 animate-bounce" />
-      <div className="absolute bottom-20 right-10 w-60 h-60 bg-cyan-300 rounded-full blur-xl opacity-50 animate-pulse" />
-      <div className="absolute top-1/2 right-1/4 w-32 h-32 bg-orange-300 rounded-full blur-lg opacity-40 animate-pulse [animation-delay:1s]" />
-      <div className="absolute bottom-10 left-1/3 w-24 h-24 bg-green-300 rounded-full blur-lg opacity-50 animate-bounce [animation-delay:0.5s]" />
-      
-      {/* Floating Icons */}
-      <div className="absolute top-20 right-20 text-white/30 animate-spin" style={{ animationDuration: '8s' }}>
-        <Sparkles size={40} />
+    <div className="min-h-screen bg-gradient-to-br from-blue-400 via-orange-300 to-blue-500 flex items-center justify-center p-4 relative overflow-hidden">
+      {/* Background Image */}
+      <div className="absolute inset-0 z-0">
+        <Image 
+          src={bgUrl} 
+          alt="Background" 
+          fill
+          className="object-cover"
+          priority
+        />
+        <div className="absolute inset-0 bg-blue-500/40" />
       </div>
-      <div className="absolute bottom-32 left-16 text-white/20 animate-spin" style={{ animationDuration: '12s' }}>
-        <Sparkles size={30} />
+
+      {/* Floating Orange Shapes */}
+      <div className="absolute top-20 left-10 w-32 h-32 bg-orange-400/60 rounded-full blur-xl animate-pulse" />
+      <div className="absolute bottom-32 right-16 w-40 h-40 bg-orange-300/50 rounded-full blur-xl animate-pulse [animation-delay:1s]" />
+      <div className="absolute top-1/2 left-1/4 w-24 h-24 bg-blue-300/40 rounded-full blur-lg animate-bounce" />
+      
+      {/* Sparkles */}
+      <div className="absolute top-16 right-24 text-white/60 animate-spin" style={{ animationDuration: '10s' }}>
+        <Sparkles size={28} />
+      </div>
+      <div className="absolute bottom-20 left-20 text-white/50 animate-spin" style={{ animationDuration: '14s' }}>
+        <Sparkles size={20} />
       </div>
 
       {/* Main Card */}
       <Card className={cn(
         "w-full max-w-md relative z-10 transition-all duration-500",
-        "bg-white/90 backdrop-blur-xl border-0 shadow-2xl",
+        "bg-white/95 backdrop-blur-xl border-0 shadow-2xl",
         error && "animate-shake",
         isSuccess && "border-2 border-green-400"
       )}>
@@ -73,7 +85,7 @@ export default function AdminPinPage() {
           {/* Logo Section */}
           <div className="text-center mb-8">
             <div className="relative w-24 h-24 mx-auto mb-4">
-              <div className="absolute inset-0 bg-gradient-to-br from-violet-500 to-pink-500 rounded-3xl blur-md opacity-40" />
+              <div className="absolute inset-0 bg-gradient-to-br from-blue-400 to-orange-400 rounded-3xl blur-md opacity-40" />
               <div className="relative w-full h-full bg-white rounded-3xl flex items-center justify-center shadow-lg border border-gray-100">
                 <Image 
                   src={logoUrl} 
@@ -83,8 +95,8 @@ export default function AdminPinPage() {
                 />
               </div>
             </div>
-            <h1 className="text-4xl font-black bg-gradient-to-r from-violet-600 to-pink-600 bg-clip-text text-transparent">
-              TGNE
+            <h1 className="text-4xl font-black text-gray-800">
+              TGNE <span className="text-orange-500">CORE</span>
             </h1>
             <p className="text-gray-500 text-sm mt-1 font-medium">Admin Dashboard</p>
           </div>
@@ -93,16 +105,16 @@ export default function AdminPinPage() {
           <div className="flex justify-center mb-6">
             <div className={cn(
               "p-5 rounded-full transition-all duration-300 shadow-md",
-              isSuccess ? "bg-green-100" : error ? "bg-red-100" : "bg-gradient-to-br from-violet-100 to-pink-100"
+              isSuccess ? "bg-green-100" : error ? "bg-red-100" : "bg-blue-50"
             )}>
               {isSuccess ? (
                 <CheckCircle2 className="text-green-500" size={36} />
               ) : error ? (
                 <ShieldAlert className="text-red-500" size={36} />
               ) : isVerifying ? (
-                <Loader2 className="text-violet-600 animate-spin" size={36} />
+                <Loader2 className="text-blue-600 animate-spin" size={36} />
               ) : (
-                <Fingerprint className="text-pink-500" size={36} />
+                <Fingerprint className="text-orange-500" size={36} />
               )}
             </div>
           </div>
@@ -125,7 +137,7 @@ export default function AdminPinPage() {
               placeholder="••••••••"
               className={cn(
                 "h-14 bg-gray-50 border-2 border-gray-200 text-gray-900 text-center text-2xl tracking-[0.5em] font-mono placeholder:text-gray-400",
-                "focus:ring-2 focus:ring-violet-500 focus:border-violet-500",
+                "focus:ring-2 focus:ring-blue-500 focus:border-blue-500",
                 error && "border-red-300 focus:ring-red-400 focus:border-red-400",
                 isSuccess && "border-green-400",
                 "rounded-xl"
@@ -141,7 +153,7 @@ export default function AdminPinPage() {
                 "w-full h-14 text-base font-bold transition-all duration-300 rounded-xl shadow-lg",
                 isSuccess ? "bg-green-500 hover:bg-green-600 text-white" : 
                 error ? "bg-red-500 hover:bg-red-600 text-white" :
-                "bg-gradient-to-r from-violet-600 to-pink-600 hover:from-violet-700 hover:to-pink-700 text-white",
+                "bg-gradient-to-r from-blue-500 to-orange-500 hover:from-blue-600 hover:to-orange-600 text-white",
                 isVerifying && "opacity-70"
               )}
             >
