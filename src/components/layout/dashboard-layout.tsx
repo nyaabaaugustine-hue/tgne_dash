@@ -1,6 +1,6 @@
 "use client";
 
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { 
@@ -13,7 +13,8 @@ import {
   Download, 
   RotateCcw,
   Menu,
-  X
+  Sun,
+  Moon
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
@@ -30,12 +31,35 @@ const navItems = [
 
 export function DashboardLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
-  const [mobileOpen, setMobileOpen] = React.useState(false);
-  const [aiOpen, setAiOpen] = React.useState(false);
+  const [mobileOpen, setMobileOpen] = useState(false);
+  const [aiOpen, setAiOpen] = useState(false);
+  const [isDark, setIsDark] = useState(false);
   const { exportData, resetData } = useApp();
 
+  useEffect(() => {
+    const savedTheme = localStorage.getItem('theme');
+    const systemDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+    
+    if (savedTheme === 'dark' || (!savedTheme && systemDark)) {
+      setIsDark(true);
+      document.documentElement.classList.add('dark');
+    }
+  }, []);
+
+  const toggleTheme = () => {
+    const newDark = !isDark;
+    setIsDark(newDark);
+    if (newDark) {
+      document.documentElement.classList.add('dark');
+      localStorage.setItem('theme', 'dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+      localStorage.setItem('theme', 'light');
+    }
+  };
+
   return (
-    <div className="flex h-screen bg-background overflow-hidden">
+    <div className="flex h-screen bg-background text-foreground overflow-hidden">
       {/* Sidebar */}
       <aside className={cn(
         "fixed inset-y-0 left-0 z-50 w-64 bg-card border-r transition-transform lg:translate-x-0 lg:static",
@@ -94,7 +118,7 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
                 <span>Export Data</span>
               </button>
               <button 
-                onClick={resetData}
+                onClick={() => resetData()}
                 className="w-full flex items-center gap-3 px-3 py-2 text-xs text-destructive hover:bg-destructive/10 rounded-md transition-colors"
               >
                 <RotateCcw size={14} />
@@ -107,12 +131,15 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
 
       {/* Main Content */}
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
-        <header className="h-16 border-b bg-card flex items-center justify-between px-6 lg:justify-end">
+        <header className="h-16 border-b bg-card flex items-center justify-between px-6">
           <button className="lg:hidden p-2 text-muted-foreground" onClick={() => setMobileOpen(true)}>
             <Menu size={24} />
           </button>
           
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-4 ml-auto">
+            <Button variant="ghost" size="icon" onClick={toggleTheme} className="text-muted-foreground">
+              {isDark ? <Sun size={20} /> : <Moon size={20} />}
+            </Button>
             <div className="hidden sm:flex flex-col items-end">
               <span className="text-sm font-medium">Dev Admin</span>
               <span className="text-xs text-muted-foreground">Pro Account</span>

@@ -4,6 +4,37 @@
 
 @layer base {
   :root {
+    --background: 0 0% 100%;
+    --foreground: 224 71.4% 4.1%;
+    --card: 0 0% 100%;
+    --card-foreground: 224 71.4% 4.1%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 224 71.4% 4.1%;
+    --primary: 262.1 83.3% 57.8%;
+    --primary-foreground: 210 20% 98%;
+    --secondary: 220 14.3% 95.9%;
+    --secondary-foreground: 220.9 39.3% 11.1%;
+    --muted: 220 14.3% 95.9%;
+    --muted-foreground: 220 8.9% 46.1%;
+    --accent: 220 14.3% 95.9%;
+    --accent-foreground: 220.9 39.3% 11.1%;
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 210 20% 98%;
+    --border: 220 13% 91%;
+    --input: 220 13% 91%;
+    --ring: 262.1 83.3% 57.8%;
+    --radius: 1rem;
+    --sidebar-background: 0 0% 98%;
+    --sidebar-foreground: 240 5.3% 26.1%;
+    --sidebar-primary: 262.1 83.3% 57.8%;
+    --sidebar-primary-foreground: 0 0% 98%;
+    --sidebar-accent: 240 4.8% 95.9%;
+    --sidebar-accent-foreground: 240 5.9% 10%;
+    --sidebar-border: 220 13% 91%;
+    --sidebar-ring: 262.1 83.3% 57.8%;
+  }
+
+  .dark {
     --background: 224 71% 4%;
     --foreground: 213 31% 91%;
     --card: 224 71% 4%;
@@ -23,7 +54,6 @@
     --border: 216 34% 17%;
     --input: 216 34% 17%;
     --ring: 263.4 70% 50.4%;
-    --radius: 1rem;
     --sidebar-background: 224 71% 2%;
     --sidebar-foreground: 213 31% 91%;
     --sidebar-primary: 263.4 70% 50.4%;
@@ -45,15 +75,23 @@
 }
 
 .glass-morphism {
-  @apply bg-black/40 backdrop-blur-xl border border-white/10 shadow-2xl;
+  @apply bg-background/60 backdrop-blur-xl border border-border/50 shadow-2xl;
 }
 
 .premium-card {
-  @apply bg-gradient-to-br from-white/[0.05] to-transparent border border-white/10 shadow-lg hover:shadow-primary/5 transition-all duration-300;
+  @apply bg-card border border-border/50 shadow-sm hover:shadow-primary/10 transition-all duration-300;
+}
+
+.dark .premium-card {
+  @apply bg-gradient-to-br from-white/[0.05] to-transparent border-white/10;
 }
 
 .premium-button {
-  @apply shadow-[0_0_15px_rgba(139,92,246,0.3)] hover:shadow-[0_0_25px_rgba(139,92,246,0.5)] transition-all duration-300;
+  @apply shadow-sm hover:shadow-primary/20 transition-all duration-300;
+}
+
+.dark .premium-button {
+  @apply shadow-[0_0_15px_rgba(139,92,246,0.3)] hover:shadow-[0_0_25px_rgba(139,92,246,0.5)];
 }
 
 @keyframes blink {
