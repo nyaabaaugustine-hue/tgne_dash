@@ -7,7 +7,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { eq } from 'drizzle-orm';
 import { db } from '@/db';
 import { reminders } from '@/db/schema';
-import { createReminderSchema, deleteByIdSchema } from '@/lib/validations';
+import { createReminderSchema, updateReminderSchema, deleteByIdSchema } from '@/lib/validations';
 
 export const runtime = 'nodejs';
 
@@ -46,7 +46,7 @@ export async function POST(req: NextRequest) {
 export async function PUT(req: NextRequest) {
   try {
     const body = await req.json();
-    const parsed = deleteByIdSchema.safeParse(body); // reuse id schema
+    const parsed = updateReminderSchema.safeParse(body);
 
     if (!parsed.success) {
       return NextResponse.json(
@@ -57,7 +57,7 @@ export async function PUT(req: NextRequest) {
 
     const [reminder] = await db
       .update(reminders)
-      .set({ isRead: body.isRead ?? true })
+      .set({ isRead: parsed.data.isRead ?? true })
       .where(eq(reminders.id, parsed.data.id))
       .returning();
 

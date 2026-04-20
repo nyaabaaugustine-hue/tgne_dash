@@ -19,8 +19,9 @@ export const createClientSchema = z.object({
   country:          z.string().max(100).optional().nullable(),
   city:             z.string().max(100).optional().nullable(),
   location:         z.string().max(500).optional().nullable(),
-  avatarUrl:        z.string().max(2000).optional().nullable(),
-  notes:            z.string().max(5000).optional().nullable(),
+  // avatarUrl accepts either a plain URL or a base64 data URI — no length cap
+  avatarUrl:        z.string().optional().nullable(),
+  notes:            z.string().max(10000).optional().nullable(),
   // Business Setup
   status:           z.enum(['Active', 'Prospect', 'On Hold', 'Inactive']).optional().nullable(),
   accountManager:   z.string().max(255).optional().nullable(),
@@ -44,7 +45,7 @@ export const deleteByIdSchema = z.object({
 export const createWebsiteSchema = z.object({
   clientId:        z.string().min(1, 'clientId is required'),
   domainName:      z.string().min(1, 'Domain name is required').max(255),
-  url:             z.string().url('Invalid URL').max(500).optional().nullable(),
+  url:             z.string().max(500).optional().nullable(),
   hostingProvider: z.string().max(255).optional().nullable(),
   platform:        z.enum(['WordPress', 'Shopify', 'Custom', 'Other']).optional().nullable(),
   dateCreated:     z.string().optional().nullable(),
@@ -64,7 +65,7 @@ export const createCredentialSchema = z.object({
   type:     z.enum(['cPanel', 'Hosting', 'Domain Registrar', 'WordPress Admin', 'Other']),
   username: z.string().min(1, 'Username is required').max(255),
   password: z.string().min(1, 'Password is required').max(1000),
-  url:      z.string().url('Invalid URL').max(500).optional().nullable(),
+  url:      z.string().max(500).optional().nullable(),
 });
 
 // ─── Task ─────────────────────────────────────────────────────────────────────
@@ -90,6 +91,11 @@ export const createReminderSchema = z.object({
   title:   z.string().min(1, 'Title is required').max(255),
   date:    z.string().min(1, 'Date is required'),
   details: z.string().max(2000).optional().nullable(),
+});
+
+export const updateReminderSchema = z.object({
+  id:     z.string().min(1, 'ID is required'),
+  isRead: z.boolean().optional(),
 });
 
 // ─── Payment ──────────────────────────────────────────────────────────────────

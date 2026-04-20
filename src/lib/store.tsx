@@ -2,12 +2,7 @@
 
 /**
  * src/lib/store.tsx
- * Global app state — now powered by TanStack Query for caching + invalidation.
- *
- * Architecture:
- *  - useQuery fetches /api/data once and caches it (30s stale time)
- *  - Every mutation calls the API, then invalidates the cache → triggers refetch
- *  - No more manual refreshData() pattern — TanStack handles it automatically
+ * Global app state — powered by TanStack Query for caching + invalidation.
  */
 
 import React, { createContext, useContext, useEffect } from 'react';
@@ -82,13 +77,34 @@ const api = {
     }),
 };
 
+// ─── Detailed error reader ────────────────────────────────────────────────────
+
+async function readErrorText(r: Response): Promise<string> {
+  try {
+    const text = await r.text();
+    try {
+      const json = JSON.parse(text);
+      if (json?.details?.fieldErrors) {
+        const msgs = Object.entries(json.details.fieldErrors)
+          .map(([field, errs]) => `${field}: ${(errs as string[]).join(', ')}`)
+          .join(' | ');
+        return msgs || json.error || text;
+      }
+      return json.error || text;
+    } catch {
+      return text;
+    }
+  } catch {
+    return `HTTP ${r.status}`;
+  }
+}
+
 // ─── Provider ─────────────────────────────────────────────────────────────────
 
 export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const router      = useRouter();
   const queryClient = useQueryClient();
 
-  // ── Auth state (localStorage — no server involvement) ──────────────────────
   const [isAuthorized, setIsAuthorized] = React.useState(() => {
     if (typeof window === 'undefined') return false;
     return localStorage.getItem('tgne_auth_session') === 'true';
@@ -96,7 +112,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   const [isSaving, setIsSaving] = React.useState(false);
 
-  // ── Data fetching via TanStack Query ──────────────────────────────────────
   const { data = EMPTY_DATA, isLoading, error: dataError } = useQuery<AppData>({
     queryKey: queryKeys.allData,
     queryFn: () => api.get('/api/data'),
@@ -105,7 +120,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     retry: 2,
   });
 
-  // TanStack Query v5 removed meta.onError — use useEffect instead
   useEffect(() => {
     if (dataError) {
       toast({
@@ -116,16 +130,15 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }
   }, [dataError]);
 
-  /** Invalidate the master cache — TanStack refetches automatically */
   const invalidate = () => queryClient.invalidateQueries({ queryKey: queryKeys.allData });
 
-  // ── Error handler ─────────────────────────────────────────────────────────
   const handleError = (ctx: string, error: unknown) => {
     console.error(`[${ctx}]`, error);
+    const msg = error instanceof Error ? error.message : String(error);
     toast({
       variant: 'destructive',
-      title: 'Save Failed',
-      description: `Could not complete "${ctx}". Please try again.`,
+      title: `"${ctx}" failed`,
+      description: msg || 'Please try again.',
     });
   };
 
@@ -150,7 +163,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setIsSaving(true);
     try {
       const r = await api.post('/api/clients', client);
-      if (!r.ok) throw new Error(await r.text());
+      if (!r.ok) throw new Error(await readErrorText(r));
       await invalidate();
       toast({ title: 'Success', description: 'Client added successfully!' });
     } catch (e) { handleError('addClient', e); }
@@ -161,7 +174,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setIsSaving(true);
     try {
       const r = await api.put('/api/clients', { id, ...client });
-      if (!r.ok) throw new Error(await r.text());
+      if (!r.ok) throw new Error(await readErrorText(r));
       await invalidate();
       toast({ title: 'Success', description: 'Client updated!' });
     } catch (e) { handleError('updateClient', e); }
@@ -172,7 +185,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setIsSaving(true);
     try {
       const r = await api.del('/api/clients', { id });
-      if (!r.ok) throw new Error(await r.text());
+      if (!r.ok) throw new Error(await readErrorText(r));
       await invalidate();
       toast({ title: 'Deleted', description: 'Client removed.' });
     } catch (e) { handleError('deleteClient', e); }
@@ -184,7 +197,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setIsSaving(true);
     try {
       const r = await api.post('/api/websites', website);
-      if (!r.ok) throw new Error(await r.text());
+      if (!r.ok) throw new Error(await readErrorText(r));
       await invalidate();
       toast({ title: 'Success', description: 'Website added!' });
     } catch (e) { handleError('addWebsite', e); }
@@ -195,7 +208,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setIsSaving(true);
     try {
       const r = await api.put('/api/websites', { id, ...website });
-      if (!r.ok) throw new Error(await r.text());
+      if (!r.ok) throw new Error(await readErrorText(r));
       await invalidate();
       toast({ title: 'Updated', description: 'Website updated!' });
     } catch (e) { handleError('updateWebsite', e); }
@@ -206,7 +219,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setIsSaving(true);
     try {
       const r = await api.del('/api/websites', { id });
-      if (!r.ok) throw new Error(await r.text());
+      if (!r.ok) throw new Error(await readErrorText(r));
       await invalidate();
       toast({ title: 'Deleted', description: 'Website removed.' });
     } catch (e) { handleError('deleteWebsite', e); }
@@ -218,7 +231,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setIsSaving(true);
     try {
       const r = await api.post('/api/credentials', credential);
-      if (!r.ok) throw new Error(await r.text());
+      if (!r.ok) throw new Error(await readErrorText(r));
       await invalidate();
       toast({ title: 'Secured', description: 'Credential saved to vault!' });
     } catch (e) { handleError('addCredential', e); }
@@ -229,7 +242,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setIsSaving(true);
     try {
       const r = await api.del('/api/credentials', { id });
-      if (!r.ok) throw new Error(await r.text());
+      if (!r.ok) throw new Error(await readErrorText(r));
       await invalidate();
       toast({ title: 'Deleted', description: 'Credential removed.' });
     } catch (e) { handleError('deleteCredential', e); }
@@ -241,7 +254,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setIsSaving(true);
     try {
       const r = await api.post('/api/tasks', task);
-      if (!r.ok) throw new Error(await r.text());
+      if (!r.ok) throw new Error(await readErrorText(r));
       await invalidate();
       toast({ title: 'Success', description: 'Task created!' });
     } catch (e) { handleError('addTask', e); }
@@ -252,7 +265,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setIsSaving(true);
     try {
       const r = await api.put('/api/tasks', { id, status });
-      if (!r.ok) throw new Error(await r.text());
+      if (!r.ok) throw new Error(await readErrorText(r));
       await invalidate();
       toast({ title: 'Updated', description: `Task marked as ${status}` });
     } catch (e) { handleError('updateTask', e); }
@@ -263,7 +276,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setIsSaving(true);
     try {
       const r = await api.del('/api/tasks', { id });
-      if (!r.ok) throw new Error(await r.text());
+      if (!r.ok) throw new Error(await readErrorText(r));
       await invalidate();
       toast({ title: 'Deleted', description: 'Task removed.' });
     } catch (e) { handleError('deleteTask', e); }
@@ -275,10 +288,20 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setIsSaving(true);
     try {
       const r = await api.post('/api/reminders', reminder);
-      if (!r.ok) throw new Error(await r.text());
+      if (!r.ok) throw new Error(await readErrorText(r));
       await invalidate();
       toast({ title: 'Set', description: 'Reminder scheduled!' });
     } catch (e) { handleError('addReminder', e); }
+    finally     { setIsSaving(false); }
+  };
+
+  const markReminderRead = async (id: string) => {
+    setIsSaving(true);
+    try {
+      const r = await api.put('/api/reminders', { id, isRead: true });
+      if (!r.ok) throw new Error(await readErrorText(r));
+      await invalidate();
+    } catch (e) { handleError('markReminderRead', e); }
     finally     { setIsSaving(false); }
   };
 
@@ -286,7 +309,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setIsSaving(true);
     try {
       const r = await api.del('/api/reminders', { id });
-      if (!r.ok) throw new Error(await r.text());
+      if (!r.ok) throw new Error(await readErrorText(r));
       await invalidate();
       toast({ title: 'Removed', description: 'Reminder deleted.' });
     } catch (e) { handleError('deleteReminder', e); }
@@ -298,7 +321,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setIsSaving(true);
     try {
       const r = await api.post('/api/payments', payment);
-      if (!r.ok) throw new Error(await r.text());
+      if (!r.ok) throw new Error(await readErrorText(r));
       await invalidate();
       toast({ title: 'Invoice Created', description: 'New invoice saved!' });
     } catch (e) { handleError('addPayment', e); }
@@ -309,7 +332,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setIsSaving(true);
     try {
       const r = await api.put('/api/payments', { id, ...updates });
-      if (!r.ok) throw new Error(await r.text());
+      if (!r.ok) throw new Error(await readErrorText(r));
       await invalidate();
       toast({ title: 'Updated', description: 'Invoice updated!' });
     } catch (e) { handleError('updatePayment', e); }
@@ -320,7 +343,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setIsSaving(true);
     try {
       const r = await api.del('/api/payments', { id });
-      if (!r.ok) throw new Error(await r.text());
+      if (!r.ok) throw new Error(await readErrorText(r));
       await invalidate();
       toast({ title: 'Deleted', description: 'Invoice removed.' });
     } catch (e) { handleError('deletePayment', e); }
@@ -341,11 +364,15 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         updateClient,
         deleteClient,
         addWebsite,
+        updateWebsite,
+        deleteWebsite,
         addCredential,
+        deleteCredential,
         addTask,
         updateTask,
         deleteTask,
         addReminder,
+        markReminderRead,
         deleteReminder,
         addPayment,
         updatePayment,
