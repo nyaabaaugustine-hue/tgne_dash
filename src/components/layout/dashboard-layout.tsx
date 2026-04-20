@@ -41,7 +41,10 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [aiOpen, setAiOpen] = useState(false);
   const [isDark, setIsDark] = useState(false);
+  const [mounted, setMounted] = useState(false);
   const { isAuthorized, logout } = useApp();
+
+  useEffect(() => { setMounted(true); }, []);
 
   useEffect(() => {
     if (!isAuthorized && pathname !== '/tgnes') {
@@ -73,7 +76,9 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
 
   const logoUrl = "https://res.cloudinary.com/dwsl2ktt2/image/upload/v1776598078/download_kangs7.png";
 
-  if (!isAuthorized && pathname !== '/tgnes') {
+  // Wait for client mount before checking localStorage-based auth
+  // This prevents server/client HTML mismatch (hydration error)
+  if (!mounted || (!isAuthorized && pathname !== '/tgnes')) {
     return (
       <div className="h-screen w-full bg-[#02040a] flex items-center justify-center">
         <div className="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin" />
