@@ -1,73 +1,79 @@
+/**
+ * src/app/api/data/route.ts
+ * Master GET endpoint — fetches all entity collections in parallel.
+ * Used by the AppProvider in store.tsx on initial load.
+ */
+
 import { NextResponse } from 'next/server';
-import prisma from '@/lib/prisma';
+import { db } from '@/db';
+import { clients, websites, credentials, tasks, reminders, payments } from '@/db/schema';
+import { asc, desc } from 'drizzle-orm';
+
+export const runtime = 'nodejs';
+export const dynamic = 'force-dynamic';
 
 export async function GET() {
   try {
-    console.log('[API /data] Starting fetch...');
-    
-    // Sequential queries to avoid exhausting Neon's connection pool
-    const clients = await prisma.client.findMany({ orderBy: { createdAt: 'desc' } });
-    console.log('[API /data] Clients fetched:', clients.length);
-    
-    const websites = await prisma.website.findMany();
-    console.log('[API /data] Websites fetched:', websites.length);
-    
-    const credentials = await prisma.credential.findMany();
-    console.log('[API /data] Credentials fetched:', credentials.length);
-    
-    const tasks = await prisma.task.findMany();
-    console.log('[API /data] Tasks fetched:', tasks.length);
-    
-    const reminders = await prisma.reminder.findMany({ orderBy: { date: 'asc' } });
-    console.log('[API /data] Reminders fetched:', reminders.length);
-    
-    const payments = await prisma.payment.findMany({ orderBy: { createdAt: 'desc' } });
-    console.log('[API /data] Payments fetched:', payments.length);
+    // Parallel fetches — Neon HTTP driver handles concurrent requests safely
+    const [
+      allClients,
+      allWebsites,
+      allCredentials,
+      allTasks,
+      allReminders,
+      allPayments,
+    ] = await Promise.all([
+      db.select().from(clients).orderBy(desc(clients.createdAt)),
+      db.select().from(websites),
+      db.select().from(credentials),
+      db.select().from(tasks),
+      db.select().from(reminders).orderBy(asc(reminders.date)),
+      db.select().from(payments).orderBy(desc(payments.createdAt)),
+    ]);
 
     return NextResponse.json({
-      clients: clients.map(c => ({
+      clients: allClients.map((c) => ({
         ...c,
-        phone: c.phone ?? undefined,
-        email: c.email ?? undefined,
-        location: c.location ?? '',
+        phone:     c.phone     ?? undefined,
+        email:     c.email     ?? undefined,
+        location:  c.location  ?? '',
         avatarUrl: c.avatarUrl ?? undefined,
-        notes: c.notes ?? undefined,
-        createdAt: c.createdAt.toISOString(),
-        updatedAt: c.updatedAt.toISOString(),
+        notes:     c.notes     ?? undefined,
       })),
-      websites: websites.map(w => ({
+      websites: allWebsites.map((w) => ({
         ...w,
-        url: w.url ?? '',
+        url:             w.url             ?? '',
         hostingProvider: w.hostingProvider ?? '',
-        platform: w.platform ?? 'Other',
-        projectPrice: w.projectPrice ?? 0,
-        paymentStatus: w.paymentStatus ?? 'Unpaid',
-        dateCreated: w.dateCreated?.toISOString() ?? '',
-        expiryDate: w.expiryDate?.toISOString() ?? undefined,
+        platform:        (w.platform as 'WordPress' | 'Shopify' | 'Custom' | 'Other') ?? 'Other',
+        projectPrice:    w.projectPrice    ?? 0,
+        paymentStatus:   (w.paymentStatus as 'Paid' | 'Unpaid') ?? 'Unpaid',
+        dateCreated:     w.dateCreated     ?? '',
+        expiryDate:      w.expiryDate      ?? undefined,
       })),
-      credentials: credentials.map(c => ({
+      credentials: allCredentials.map((c) => ({
         ...c,
         url: c.url ?? undefined,
       })),
-      tasks: tasks.map(t => ({
+      tasks: allTasks.map((t) => ({
         ...t,
-        status: t.status ?? 'Pending',
+        status:  (t.status as 'Pending' | 'In Progress' | 'Completed') ?? 'Pending',
         dueDate: t.dueDate ?? '',
       })),
-      reminders: reminders.map(r => ({
+      reminders: allReminders.map((r) => ({
         ...r,
         details: r.details ?? '',
       })),
-      payments: payments.map(p => ({
+      payments: allPayments.map((p) => ({
         ...p,
-        paymentDate: p.paymentDate || '',
-        description: p.description || '',
-        invoiceNumber: p.invoiceNumber || '',
-        createdAt: p.createdAt.toISOString(),
+        description:   p.description   ?? '',
+        invoiceNumber: p.invoiceNumber ?? '',
       })),
     });
   } catch (error) {
-    console.error('[GET /api/data] ERROR:', error);
-    return NextResponse.json({ error: 'Failed to fetch data', details: String(error) }, { status: 500 });
+    console.error('[GET /api/data]', error);
+    return NextResponse.json(
+      { error: 'Failed to fetch data', details: String(error) },
+      { status: 500 }
+    );
   }
 }

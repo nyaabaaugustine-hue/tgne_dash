@@ -1,27 +1,15 @@
-import { PrismaClient } from '@prisma/client';
+/**
+ * src/lib/prisma.ts — DEPRECATED
+ *
+ * Prisma has been replaced with Drizzle ORM + Neon Serverless Driver.
+ *
+ * New database layer:
+ *   Connection : src/db/index.ts   → import { db } from '@/db'
+ *   Schema     : src/db/schema.ts  → import { clients, ... } from '@/db/schema'
+ *   Config     : drizzle.config.ts
+ *
+ * This file is kept to avoid import errors during transition.
+ * Safe to delete once all imports of '@/lib/prisma' are removed.
+ */
 
-const prismaClientSingleton = () => {
-  return new PrismaClient({
-    log: process.env.NODE_ENV === 'development' ? ['error', 'warn'] : ['error'],
-    datasources: {
-      db: {
-        url: process.env.DATABASE_URL,
-      },
-    },
-  });
-};
-
-declare global {
-  // eslint-disable-next-line no-var
-  var prisma: undefined | ReturnType<typeof prismaClientSingleton>;
-}
-
-const prisma = globalThis.prisma ?? prismaClientSingleton();
-
-if (process.env.NODE_ENV !== 'production') globalThis.prisma = prisma;
-
-// Log connection status on first use
-console.log('[Prisma] DATABASE_URL present:', !!process.env.DATABASE_URL);
-console.log('[Prisma] Node env:', process.env.NODE_ENV);
-
-export default prisma;
+export {};

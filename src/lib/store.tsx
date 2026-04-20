@@ -1,39 +1,61 @@
 "use client";
 
-import React, { createContext, useContext, useState, useEffect } from 'react';
-import { AppData, Client, Website, Credential, Task, Reminder, Payment } from './types';
+/**
+ * src/lib/store.tsx
+ * Global app state — now powered by TanStack Query for caching + invalidation.
+ *
+ * Architecture:
+ *  - useQuery fetches /api/data once and caches it (30s stale time)
+ *  - Every mutation calls the API, then invalidates the cache → triggers refetch
+ *  - No more manual refreshData() pattern — TanStack handles it automatically
+ */
+
+import React, { createContext, useContext } from 'react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useRouter } from 'next/navigation';
+import { AppData, Client, Website, Credential, Task, Reminder, Payment } from './types';
+import { queryKeys } from './query-client';
 import { toast } from '@/hooks/use-toast';
+
+// ─── Types ────────────────────────────────────────────────────────────────────
 
 interface AppContextType {
   data: AppData;
   isLoading: boolean;
   isSaving: boolean;
   isAuthorized: boolean;
-  verifyPin: (pin: string) => boolean;
-  logout: () => void;
-  addClient: (client: Partial<Client>) => Promise<void>;
-  updateClient: (id: string, client: Partial<Client>) => Promise<void>;
-  deleteClient: (id: string) => Promise<void>;
-  addWebsite: (website: Partial<Website>) => Promise<void>;
+  verifyPin:     (pin: string) => boolean;
+  logout:        () => void;
+  addClient:     (client: Partial<Client>) => Promise<void>;
+  updateClient:  (id: string, client: Partial<Client>) => Promise<void>;
+  deleteClient:  (id: string) => Promise<void>;
+  addWebsite:    (website: Partial<Website>) => Promise<void>;
   addCredential: (credential: Partial<Credential>) => Promise<void>;
-  addTask: (task: Partial<Task>) => Promise<void>;
-  updateTask: (id: string, status: Task['status']) => Promise<void>;
-  addReminder: (reminder: Partial<Reminder>) => Promise<void>;
-  deleteReminder: (id: string) => Promise<void>;
-  addPayment: (payment: Partial<Payment>) => Promise<void>;
+  addTask:       (task: Partial<Task>) => Promise<void>;
+  updateTask:    (id: string, status: Task['status']) => Promise<void>;
+  deleteTask:    (id: string) => Promise<void>;
+  addReminder:   (reminder: Partial<Reminder>) => Promise<void>;
+  deleteReminder:(id: string) => Promise<void>;
+  addPayment:    (payment: Partial<Payment>) => Promise<void>;
   updatePayment: (id: string, updates: Partial<Payment>) => Promise<void>;
   deletePayment: (id: string) => Promise<void>;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
+
 const ADMIN_PIN = "1234567a";
 
-// Simple fetch helpers
+const EMPTY_DATA: AppData = {
+  clients: [], websites: [], credentials: [],
+  tasks: [], reminders: [], payments: [],
+};
+
+// ─── Fetch helpers ────────────────────────────────────────────────────────────
+
 const api = {
   get: (path: string) =>
     fetch(path).then(r => {
-      if (!r.ok) throw new Error(`GET ${path} failed: ${r.status}`);
+      if (!r.ok) throw new Error(`GET ${path} → ${r.status}`);
       return r.json();
     }),
   post: (path: string, body: unknown) =>
@@ -56,42 +78,52 @@ const api = {
     }),
 };
 
+// ─── Provider ─────────────────────────────────────────────────────────────────
+
 export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [isAuthorized, setIsAuthorized] = useState(false);
-  const [isLoading, setIsLoading] = useState(true);
-  const [isSaving, setIsSaving] = useState(false);
-  const [data, setData] = useState<AppData>({
-    clients: [],
-    websites: [],
-    credentials: [],
-    tasks: [],
-    reminders: [],
-    payments: [],
+  const router      = useRouter();
+  const queryClient = useQueryClient();
+
+  // ── Auth state (localStorage — no server involvement) ──────────────────────
+  const [isAuthorized, setIsAuthorized] = React.useState(() => {
+    if (typeof window === 'undefined') return false;
+    return localStorage.getItem('tgne_auth_session') === 'true';
   });
-  const router = useRouter();
 
-  const refreshData = async () => {
-    const result = await api.get('/api/data');
-    setData(result);
-  };
+  const [isSaving, setIsSaving] = React.useState(false);
 
-  useEffect(() => {
-    if (localStorage.getItem('tgne_auth_session') === 'true') {
-      setIsAuthorized(true);
-    }
-
-    refreshData()
-      .catch(() =>
+  // ── Data fetching via TanStack Query ──────────────────────────────────────
+  const { data = EMPTY_DATA, isLoading } = useQuery<AppData>({
+    queryKey: queryKeys.allData,
+    queryFn: () => api.get('/api/data'),
+    staleTime: 30 * 1000,       // treat data fresh for 30 s
+    gcTime:    5 * 60 * 1000,   // keep in cache for 5 min
+    retry: 2,
+    meta: {
+      onError: () => {
         toast({
           variant: 'destructive',
           title: 'Connection Error',
           description: 'Could not load data from the database. Check your connection.',
-        })
-      )
-      .finally(() => setIsLoading(false));
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+        });
+      },
+    },
+  });
 
+  /** Invalidate the master cache — TanStack refetches automatically */
+  const invalidate = () => queryClient.invalidateQueries({ queryKey: queryKeys.allData });
+
+  // ── Error handler ─────────────────────────────────────────────────────────
+  const handleError = (ctx: string, error: unknown) => {
+    console.error(`[${ctx}]`, error);
+    toast({
+      variant: 'destructive',
+      title: 'Save Failed',
+      description: `Could not complete "${ctx}". Please try again.`,
+    });
+  };
+
+  // ── Auth ──────────────────────────────────────────────────────────────────
   const verifyPin = (pin: string) => {
     if (pin === ADMIN_PIN) {
       setIsAuthorized(true);
@@ -107,32 +139,16 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     router.push('/tgnes');
   };
 
-  const handleError = (ctx: string, error: unknown) => {
-    console.error(`[${ctx}]`, error);
-    toast({
-      variant: 'destructive',
-      title: 'Save Failed',
-      description: `Could not complete "${ctx}". Please try again.`,
-    });
-  };
-
-  // ═══════════════════════════════════════════════════
-  // MutActions with Premium Save Animation
-  // ═══════════════════════════════════════════════════
-
-  // ── Clients ──────────────────────────────────────────────
+  // ── Clients ───────────────────────────────────────────────────────────────
   const addClient = async (client: Partial<Client>) => {
     setIsSaving(true);
     try {
       const r = await api.post('/api/clients', client);
       if (!r.ok) throw new Error(await r.text());
-      await refreshData();
+      await invalidate();
       toast({ title: 'Success', description: 'Client added successfully!' });
-    } catch (e) {
-      handleError('addClient', e);
-    } finally {
-      setIsSaving(false);
-    }
+    } catch (e) { handleError('addClient', e); }
+    finally     { setIsSaving(false); }
   };
 
   const updateClient = async (id: string, client: Partial<Client>) => {
@@ -140,13 +156,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     try {
       const r = await api.put('/api/clients', { id, ...client });
       if (!r.ok) throw new Error(await r.text());
-      await refreshData();
+      await invalidate();
       toast({ title: 'Success', description: 'Client updated!' });
-    } catch (e) {
-      handleError('updateClient', e);
-    } finally {
-      setIsSaving(false);
-    }
+    } catch (e) { handleError('updateClient', e); }
+    finally     { setIsSaving(false); }
   };
 
   const deleteClient = async (id: string) => {
@@ -154,58 +167,46 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     try {
       const r = await api.del('/api/clients', { id });
       if (!r.ok) throw new Error(await r.text());
-      await refreshData();
+      await invalidate();
       toast({ title: 'Deleted', description: 'Client removed.' });
-    } catch (e) {
-      handleError('deleteClient', e);
-    } finally {
-      setIsSaving(false);
-    }
+    } catch (e) { handleError('deleteClient', e); }
+    finally     { setIsSaving(false); }
   };
 
-  // ── Websites ─────────────────────────────────────────────
+  // ── Websites ──────────────────────────────────────────────────────────────
   const addWebsite = async (website: Partial<Website>) => {
     setIsSaving(true);
     try {
       const r = await api.post('/api/websites', website);
       if (!r.ok) throw new Error(await r.text());
-      await refreshData();
+      await invalidate();
       toast({ title: 'Success', description: 'Website added!' });
-    } catch (e) {
-      handleError('addWebsite', e);
-    } finally {
-      setIsSaving(false);
-    }
+    } catch (e) { handleError('addWebsite', e); }
+    finally     { setIsSaving(false); }
   };
 
-  // ── Credentials ──────────────────────────────────────────
+  // ── Credentials ───────────────────────────────────────────────────────────
   const addCredential = async (credential: Partial<Credential>) => {
     setIsSaving(true);
     try {
       const r = await api.post('/api/credentials', credential);
       if (!r.ok) throw new Error(await r.text());
-      await refreshData();
+      await invalidate();
       toast({ title: 'Secured', description: 'Credential saved to vault!' });
-    } catch (e) {
-      handleError('addCredential', e);
-    } finally {
-      setIsSaving(false);
-    }
+    } catch (e) { handleError('addCredential', e); }
+    finally     { setIsSaving(false); }
   };
 
-  // ── Tasks ────────────────────────────────────────────────
+  // ── Tasks ─────────────────────────────────────────────────────────────────
   const addTask = async (task: Partial<Task>) => {
     setIsSaving(true);
     try {
       const r = await api.post('/api/tasks', task);
       if (!r.ok) throw new Error(await r.text());
-      await refreshData();
+      await invalidate();
       toast({ title: 'Success', description: 'Task created!' });
-    } catch (e) {
-      handleError('addTask', e);
-    } finally {
-      setIsSaving(false);
-    }
+    } catch (e) { handleError('addTask', e); }
+    finally     { setIsSaving(false); }
   };
 
   const updateTask = async (id: string, status: Task['status']) => {
@@ -213,28 +214,33 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     try {
       const r = await api.put('/api/tasks', { id, status });
       if (!r.ok) throw new Error(await r.text());
-      await refreshData();
+      await invalidate();
       toast({ title: 'Updated', description: `Task marked as ${status}` });
-    } catch (e) {
-      handleError('updateTask', e);
-    } finally {
-      setIsSaving(false);
-    }
+    } catch (e) { handleError('updateTask', e); }
+    finally     { setIsSaving(false); }
   };
 
-  // ── Reminders ────────────────────────────────────────────
+  const deleteTask = async (id: string) => {
+    setIsSaving(true);
+    try {
+      const r = await api.del('/api/tasks', { id });
+      if (!r.ok) throw new Error(await r.text());
+      await invalidate();
+      toast({ title: 'Deleted', description: 'Task removed.' });
+    } catch (e) { handleError('deleteTask', e); }
+    finally     { setIsSaving(false); }
+  };
+
+  // ── Reminders ─────────────────────────────────────────────────────────────
   const addReminder = async (reminder: Partial<Reminder>) => {
     setIsSaving(true);
     try {
       const r = await api.post('/api/reminders', reminder);
       if (!r.ok) throw new Error(await r.text());
-      await refreshData();
+      await invalidate();
       toast({ title: 'Set', description: 'Reminder scheduled!' });
-    } catch (e) {
-      handleError('addReminder', e);
-    } finally {
-      setIsSaving(false);
-    }
+    } catch (e) { handleError('addReminder', e); }
+    finally     { setIsSaving(false); }
   };
 
   const deleteReminder = async (id: string) => {
@@ -242,28 +248,22 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     try {
       const r = await api.del('/api/reminders', { id });
       if (!r.ok) throw new Error(await r.text());
-      await refreshData();
+      await invalidate();
       toast({ title: 'Removed', description: 'Reminder deleted.' });
-    } catch (e) {
-      handleError('deleteReminder', e);
-    } finally {
-      setIsSaving(false);
-    }
+    } catch (e) { handleError('deleteReminder', e); }
+    finally     { setIsSaving(false); }
   };
 
-  // ── Payments ─────────────────────────────────────────────
+  // ── Payments ──────────────────────────────────────────────────────────────
   const addPayment = async (payment: Partial<Payment>) => {
     setIsSaving(true);
     try {
       const r = await api.post('/api/payments', payment);
       if (!r.ok) throw new Error(await r.text());
-      await refreshData();
+      await invalidate();
       toast({ title: 'Invoice Created', description: 'New invoice saved!' });
-    } catch (e) {
-      handleError('addPayment', e);
-    } finally {
-      setIsSaving(false);
-    }
+    } catch (e) { handleError('addPayment', e); }
+    finally     { setIsSaving(false); }
   };
 
   const updatePayment = async (id: string, updates: Partial<Payment>) => {
@@ -271,13 +271,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     try {
       const r = await api.put('/api/payments', { id, ...updates });
       if (!r.ok) throw new Error(await r.text());
-      await refreshData();
+      await invalidate();
       toast({ title: 'Updated', description: 'Invoice updated!' });
-    } catch (e) {
-      handleError('updatePayment', e);
-    } finally {
-      setIsSaving(false);
-    }
+    } catch (e) { handleError('updatePayment', e); }
+    finally     { setIsSaving(false); }
   };
 
   const deletePayment = async (id: string) => {
@@ -285,15 +282,13 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     try {
       const r = await api.del('/api/payments', { id });
       if (!r.ok) throw new Error(await r.text());
-      await refreshData();
+      await invalidate();
       toast({ title: 'Deleted', description: 'Invoice removed.' });
-    } catch (e) {
-      handleError('deletePayment', e);
-    } finally {
-      setIsSaving(false);
-    }
+    } catch (e) { handleError('deletePayment', e); }
+    finally     { setIsSaving(false); }
   };
 
+  // ── Context value ─────────────────────────────────────────────────────────
   return (
     <AppContext.Provider
       value={{
@@ -310,6 +305,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         addCredential,
         addTask,
         updateTask,
+        deleteTask,
         addReminder,
         deleteReminder,
         addPayment,
