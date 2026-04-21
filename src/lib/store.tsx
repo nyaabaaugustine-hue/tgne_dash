@@ -28,6 +28,7 @@ interface AppContextType {
   updateClient:    (id: string, client: Partial<Client>) => Promise<void>;
   deleteClient:    (id: string) => Promise<void>;
   addWebsite:      (website: Partial<Website>) => Promise<void>;
+  bulkAddWebsites: (websites: Partial<Website>[]) => Promise<void>;
   updateWebsite:   (id: string, website: Partial<Website>) => Promise<void>;
   deleteWebsite:   (id: string) => Promise<void>;
   addCredential:   (credential: Partial<Credential>) => Promise<void>;
@@ -198,6 +199,21 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     finally     { setSavingState(null); }
   };
 
+  // Batch — fires all in parallel, does ONE invalidation at the end
+  const bulkAddWebsites = async (websiteList: Partial<Website>[]) => {
+    if (websiteList.length === 0) return;
+    setSavingState('saving');
+    try {
+      await Promise.all(
+        websiteList.map(w => api.post('/api/websites', w).then(r => {
+          if (!r.ok) return readErrorText(r).then(msg => { throw new Error(msg); });
+        }))
+      );
+      await invalidate();
+    } catch (e) { handleError('bulkAddWebsites', e); }
+    finally     { setSavingState(null); }
+  };
+
   const updateWebsite = async (id: string, website: Partial<Website>) => {
     setSavingState('updating');
     try {
@@ -358,6 +374,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         updateClient,
         deleteClient,
         addWebsite,
+        bulkAddWebsites,
         updateWebsite,
         deleteWebsite,
         addCredential,

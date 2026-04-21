@@ -56,9 +56,9 @@ export default function InvoicesPage() {
     paymentDate:   new Date().toISOString().split('T')[0]
   });
 
-  const handleAddInvoice = (e: React.FormEvent) => {
+  const handleAddInvoice = async (e: React.FormEvent) => {
     e.preventDefault();
-    addPayment(newInvoice);
+    await addPayment(newInvoice);
     setIsAddOpen(false);
     setNewInvoice({
       clientId: '', amount: 0, status: 'PENDING', description: '',
@@ -84,15 +84,12 @@ export default function InvoicesPage() {
   const getClientName = (id: string) =>
     data.clients.find(c => c.id === id)?.businessName || 'Unknown Client';
 
-  // Summary stats
   const totalPaid    = data.payments.filter(p => p.status === 'PAID').reduce((s, p) => s + p.amount, 0);
   const totalPending = data.payments.filter(p => p.status === 'PENDING').reduce((s, p) => s + p.amount, 0);
 
   return (
     <DashboardLayout>
       <div className="space-y-8">
-
-        {/* ── Header ─────────────────────────────────────────────────────── */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
             <h1 className="text-4xl font-extrabold tracking-tight">Financials</h1>
@@ -166,11 +163,10 @@ export default function InvoicesPage() {
           </Dialog>
         </div>
 
-        {/* ── Stats strip ───────────────────────────────────────────────── */}
         <div className="grid grid-cols-3 gap-4">
           {[
-            { label: 'Total Invoices',  value: data.payments.length,                  color: 'text-foreground' },
-            { label: 'Paid Revenue',    value: `GHS ${totalPaid.toLocaleString()}`,   color: 'text-emerald-600' },
+            { label: 'Total Invoices',  value: data.payments.length,                   color: 'text-foreground' },
+            { label: 'Paid Revenue',    value: `GHS ${totalPaid.toLocaleString()}`,    color: 'text-emerald-600' },
             { label: 'Pending Amount',  value: `GHS ${totalPending.toLocaleString()}`, color: 'text-amber-600' },
           ].map(s => (
             <div key={s.label} className="p-4 rounded-2xl border bg-card text-center">
@@ -180,7 +176,6 @@ export default function InvoicesPage() {
           ))}
         </div>
 
-        {/* ── Search ────────────────────────────────────────────────────── */}
         <div className="relative max-w-xl">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" size={18} />
           <Input placeholder="Search by invoice #, client, or services..."
@@ -188,7 +183,6 @@ export default function InvoicesPage() {
             value={searchTerm} onChange={e => setSearchTerm(e.target.value)} />
         </div>
 
-        {/* ── Table ─────────────────────────────────────────────────────── */}
         <div className="rounded-2xl border overflow-hidden shadow-sm">
           <Table>
             <TableHeader className="bg-muted/40">
@@ -232,8 +226,6 @@ export default function InvoicesPage() {
                     </TableCell>
                     <TableCell className="text-right">
                       <div className="flex justify-end gap-1.5">
-
-                        {/* Mark Paid / View Receipt */}
                         {payment.status === 'PENDING' ? (
                           <Button size="sm" variant="outline"
                             className="h-8 gap-1.5 text-xs border-emerald-500/30 hover:bg-emerald-50 text-emerald-600"
@@ -247,8 +239,6 @@ export default function InvoicesPage() {
                             <Receipt size={13} /> Receipt
                           </Button>
                         )}
-
-                        {/* PDF Download */}
                         <Button size="sm" variant="outline" className="h-8 gap-1.5 text-xs"
                           onClick={() => {
                             const client = data.clients.find(c => c.id === payment.clientId);
@@ -256,8 +246,6 @@ export default function InvoicesPage() {
                           }}>
                           <Download size={13} /> PDF
                         </Button>
-
-                        {/* Delete — red while deleting */}
                         <Button size="sm" variant="ghost"
                           onClick={() => handleDelete(payment.id)}
                           disabled={isDeleting}
@@ -267,9 +255,7 @@ export default function InvoicesPage() {
                               ? 'opacity-100 bg-red-600 text-white hover:bg-red-700'
                               : 'text-muted-foreground hover:text-destructive hover:bg-destructive/10'
                           )}>
-                          {isDeleting
-                            ? <Loader2 size={13} className="animate-spin" />
-                            : <Trash2 size={13} />}
+                          {isDeleting ? <Loader2 size={13} className="animate-spin" /> : <Trash2 size={13} />}
                         </Button>
                       </div>
                     </TableCell>
@@ -287,7 +273,6 @@ export default function InvoicesPage() {
           </Table>
         </div>
 
-        {/* ── Receipt Dialog ─────────────────────────────────────────────── */}
         <Dialog open={isReceiptOpen} onOpenChange={setIsReceiptOpen}>
           <DialogContent className="sm:max-w-[600px] p-0 overflow-hidden bg-white">
             <DialogHeader className="p-6 border-b bg-muted/20">
@@ -310,7 +295,6 @@ export default function InvoicesPage() {
                     <p className="font-bold">RCP-{selectedPayment.invoiceNumber}</p>
                   </div>
                 </div>
-
                 <div className="grid grid-cols-2 gap-8 py-6 border-y border-dashed">
                   <div>
                     <p className="text-[10px] font-bold uppercase tracking-widest text-gray-400 mb-1">Billed To</p>
@@ -325,7 +309,6 @@ export default function InvoicesPage() {
                     </span>
                   </div>
                 </div>
-
                 <div className="space-y-3">
                   <div className="flex justify-between text-xs font-semibold text-gray-400 uppercase tracking-wider">
                     <span>Description</span><span>Amount</span>
@@ -335,7 +318,6 @@ export default function InvoicesPage() {
                     <span className="font-black">GHS {selectedPayment.amount.toLocaleString()}</span>
                   </div>
                 </div>
-
                 <div className="pt-4 flex justify-between items-end border-t">
                   <div className="space-y-1">
                     <div className="w-32 h-10 border-b-2 border-gray-200 flex items-end justify-center">
@@ -348,7 +330,6 @@ export default function InvoicesPage() {
                     <p className="text-3xl font-black text-primary">GHS {selectedPayment.amount.toLocaleString()}</p>
                   </div>
                 </div>
-
                 <div className="bg-primary p-4 rounded-xl flex items-center justify-between text-white">
                   <div className="flex items-center gap-3">
                     <div className="w-9 h-9 bg-white/20 rounded-full flex items-center justify-center">

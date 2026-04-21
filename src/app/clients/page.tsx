@@ -32,8 +32,6 @@ import { Client } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 
-// ─── Constants ────────────────────────────────────────────────────────────────
-
 const BUSINESS_TYPES  = ['LLC', 'Sole Trader', 'Partnership', 'Corporation', 'NGO', 'Startup', 'Other'];
 const INDUSTRIES      = ['E-commerce', 'Healthcare', 'Finance', 'Education', 'Real Estate', 'Technology', 'Media', 'Hospitality', 'Retail', 'Other'];
 const PAYMENT_TERMS   = ['Due on Receipt', 'Net 15', 'Net 30', 'Net 60'];
@@ -48,8 +46,6 @@ const STATUS_CONFIG: Record<string, { color: string; icon: React.ElementType }> 
 };
 const TAG_OPTIONS = ['VIP', 'High Value', 'Risky', 'New', 'Recurring', 'Priority'];
 
-// ─── Types ────────────────────────────────────────────────────────────────────
-
 type SiteEntry = {
   domainName:      string;
   platform:        'WordPress' | 'Shopify' | 'Custom' | 'Other';
@@ -59,9 +55,7 @@ type SiteEntry = {
   paymentStatus:   'Paid' | 'Unpaid';
 };
 
-// ─── Helpers ──────────────────────────────────────────────────────────────────
-
-const blank      = (): Partial<Client> => ({
+const blank = (): Partial<Client> => ({
   name: '', businessName: '', businessType: '', industry: '',
   email: '', phone: '', preferredContact: 'email',
   country: 'Ghana', city: '', avatarUrl: '', notes: '',
@@ -70,12 +64,10 @@ const blank      = (): Partial<Client> => ({
   paymentTerms: 'Due on Receipt', preferredPayment: 'Mobile Money',
 });
 
-const blankSite  = (): SiteEntry => ({
+const blankSite = (): SiteEntry => ({
   domainName: '', platform: 'WordPress', hostingProvider: '',
   expiryDate: '', projectPrice: '', paymentStatus: 'Unpaid',
 });
-
-// ─── Tag chips ────────────────────────────────────────────────────────────────
 
 function TagChips({ value, onChange }: { value: string; onChange: (v: string) => void }) {
   const selected = value ? value.split(',').map(t => t.trim()).filter(Boolean) : [];
@@ -100,8 +92,6 @@ function TagChips({ value, onChange }: { value: string; onChange: (v: string) =>
   );
 }
 
-// ─── Section heading ──────────────────────────────────────────────────────────
-
 function SectionHead({ icon: Icon, title, subtitle }: { icon: React.ElementType; title: string; subtitle: string }) {
   return (
     <div className="flex items-center gap-3 mb-5">
@@ -116,32 +106,25 @@ function SectionHead({ icon: Icon, title, subtitle }: { icon: React.ElementType;
   );
 }
 
-// ─── Main Component ───────────────────────────────────────────────────────────
-
 export default function ClientsPage() {
-  const { data, addClient, updateClient, deleteClient, addWebsite } = useApp();
+  const { data, addClient, updateClient, deleteClient, addWebsite, bulkAddWebsites } = useApp();
   const { toast } = useToast();
 
-  // Dialog / sheet state
   const [isAddOpen,        setIsAddOpen]        = useState(false);
   const [selectedClient,   setSelectedClient]   = useState<Client | null>(null);
   const [isEditing,        setIsEditing]        = useState(false);
 
-  // Form state
   const [step,             setStep]             = useState<1 | 2 | 3>(1);
   const [form,             setForm]             = useState<Partial<Client>>(blank());
   const [editData,         setEditData]         = useState<Partial<Client>>({});
   const [logoPreview,      setLogoPreview]      = useState<string | null>(null);
   const [siteEntries,      setSiteEntries]      = useState<SiteEntry[]>([]);
 
-  // Filters
   const [searchTerm,       setSearchTerm]       = useState('');
   const [statusFilter,     setStatusFilter]     = useState<string>('All');
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const editFileRef  = useRef<HTMLInputElement>(null);
-
-  // ── Computed ──────────────────────────────────────────────────────────────
 
   const filteredClients = useMemo(() => {
     return data.clients.filter(c => {
@@ -166,8 +149,6 @@ export default function ClientsPage() {
     return { sitesCount: sites.length, tasksCount: taskItems.length, unpaid, revenue };
   };
 
-  // ── Image upload ──────────────────────────────────────────────────────────
-
   const handleFile = (e: React.ChangeEvent<HTMLInputElement>, target: 'form' | 'edit') => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -185,12 +166,8 @@ export default function ClientsPage() {
     reader.readAsDataURL(file);
   };
 
-  // ── Form helpers ──────────────────────────────────────────────────────────
-
   const set  = (key: keyof Client) => (val: string | boolean) => setForm(p => ({ ...p, [key]: val }));
   const setE = (key: keyof Client) => (val: string | boolean) => setEditData(p => ({ ...p, [key]: val }));
-
-  // ── Site entry helpers ────────────────────────────────────────────────────
 
   const updateSite = (idx: number, field: keyof SiteEntry, val: string) => {
     setSiteEntries(prev => {
@@ -202,10 +179,7 @@ export default function ClientsPage() {
 
   const removeSite = (idx: number) => setSiteEntries(prev => prev.filter((_, i) => i !== idx));
 
-  // ── Submit — creates client THEN websites ─────────────────────────────────
-
-  const handleAddClient = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleAddClient = async () => {
     const location = [form.city, form.country].filter(Boolean).join(', ');
     const newClient = await addClient({
       ...form,
@@ -214,35 +188,38 @@ export default function ClientsPage() {
     });
 
     if (newClient) {
-      for (const site of siteEntries) {
-        if (site.domainName.trim()) {
-          await addWebsite({
-            clientId:        newClient.id,
-            domainName:      site.domainName.trim(),
-            url:             `https://${site.domainName.trim().replace(/^https?:\/\//i, '')}`,
-            platform:        site.platform,
-            hostingProvider: site.hostingProvider || undefined,
-            expiryDate:      site.expiryDate || undefined,
-            projectPrice:    site.projectPrice ? parseFloat(site.projectPrice) : undefined,
-            paymentStatus:   site.paymentStatus,
-          });
-        }
-      }
-    }
+      // Build the list of valid site payloads, then batch-create them in parallel
+      const validSites = siteEntries
+        .filter(s => s.domainName.trim())
+        .map(s => ({
+          clientId:        newClient.id,
+          domainName:      s.domainName.trim(),
+          url:             `https://${s.domainName.trim().replace(/^https?:\/\//i, '')}`,
+          platform:        s.platform,
+          hostingProvider: s.hostingProvider || undefined,
+          expiryDate:      s.expiryDate      || undefined,
+          projectPrice:    s.projectPrice ? parseFloat(s.projectPrice) : undefined,
+          paymentStatus:   s.paymentStatus,
+        }));
 
-    setIsAddOpen(false);
-    setForm(blank());
-    setSiteEntries([]);
-    setLogoPreview(null);
-    setStep(1);
+      if (validSites.length > 0) {
+        await bulkAddWebsites(validSites);
+      }
+
+      setIsAddOpen(false);
+      setForm(blank());
+      setSiteEntries([]);
+      setLogoPreview(null);
+      setStep(1);
+    }
   };
 
-  const handleUpdateClient = (e: React.FormEvent) => {
+  const handleUpdateClient = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedClient) return;
     const location = [editData.city ?? selectedClient.city, editData.country ?? selectedClient.country]
       .filter(Boolean).join(', ');
-    updateClient(selectedClient.id, { ...editData, location });
+    await updateClient(selectedClient.id, { ...editData, location });
     setSelectedClient({ ...selectedClient, ...editData, location } as Client);
     setIsEditing(false);
     setLogoPreview(null);
@@ -255,23 +232,16 @@ export default function ClientsPage() {
     setIsEditing(true);
   };
 
-  // ── Image renderer ────────────────────────────────────────────────────────
-
   const ClientImg = ({ src, alt, className }: { src: string; alt: string; className?: string }) =>
     src.startsWith('data:')
       // eslint-disable-next-line @next/next/no-img-element
       ? <img src={src} alt={alt} className={cn('object-cover', className)} />
       : <Image src={src} alt={alt} fill className={cn('object-cover', className)} />;
 
-  // ─────────────────────────────────────────────────────────────────────────
-  // RENDER
-  // ─────────────────────────────────────────────────────────────────────────
-
   return (
     <DashboardLayout>
       <div className="space-y-8">
 
-        {/* ── Header ─────────────────────────────────────────────────────── */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
             <h1 className="text-4xl font-extrabold tracking-tight text-foreground">Partners</h1>
@@ -290,7 +260,6 @@ export default function ClientsPage() {
               </Button>
             </DialogTrigger>
 
-            {/* ── Add Dialog ──────────────────────────────────────────── */}
             <DialogContent className="w-[95vw] sm:max-w-[700px] max-h-[92vh] overflow-hidden flex flex-col p-0">
               <DialogHeader className="px-6 pt-6 pb-4 border-b bg-muted/30">
                 <div className="flex items-center justify-between">
@@ -302,8 +271,6 @@ export default function ClientsPage() {
                        :              'Step 3 of 3 — Digital Properties'}
                     </DialogDescription>
                   </div>
-
-                  {/* 3-step indicator */}
                   <div className="flex items-center gap-2">
                     {([1, 2, 3] as const).map((s, i) => (
                       <React.Fragment key={s}>
@@ -324,15 +291,13 @@ export default function ClientsPage() {
                 </div>
               </DialogHeader>
 
-              <form onSubmit={handleAddClient} className="flex flex-col flex-1 overflow-hidden">
+              {/* onSubmit blocked — all saves go through explicit button onClick only */}
+              <form onSubmit={(e) => e.preventDefault()} className="flex flex-col flex-1 overflow-hidden">
                 <div className="flex-1 overflow-y-auto px-6 py-5">
 
-                  {/* ── STEP 1: Client Identity ────────────────────────── */}
                   {step === 1 && (
                     <div className="space-y-6">
                       <SectionHead icon={Building2} title="Business Information" subtitle="Core identity of this client" />
-
-                      {/* Logo upload */}
                       <div className="flex items-center gap-5">
                         <div className="relative w-20 h-20 rounded-2xl border-2 border-dashed border-muted-foreground/20 flex items-center justify-center bg-muted/30 overflow-hidden cursor-pointer hover:border-primary transition-colors flex-shrink-0"
                           onClick={() => fileInputRef.current?.click()}>
@@ -350,7 +315,6 @@ export default function ClientsPage() {
                           )}
                         </div>
                       </div>
-
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <div className="space-y-1.5">
                           <Label>Business Name <span className="text-destructive">*</span></Label>
@@ -378,10 +342,8 @@ export default function ClientsPage() {
                           </Select>
                         </div>
                       </div>
-
                       <Separator />
                       <SectionHead icon={User} title="Primary Contact" subtitle="Who is the main decision maker?" />
-
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <div className="space-y-1.5 sm:col-span-2">
                           <Label>Full Name <span className="text-destructive">*</span></Label>
@@ -407,10 +369,8 @@ export default function ClientsPage() {
                           </Select>
                         </div>
                       </div>
-
                       <Separator />
                       <SectionHead icon={MapPin} title="Location" subtitle="Where is this client based?" />
-
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <div className="space-y-1.5">
                           <Label>City</Label>
@@ -424,11 +384,9 @@ export default function ClientsPage() {
                     </div>
                   )}
 
-                  {/* ── STEP 2: Business Setup ─────────────────────────── */}
                   {step === 2 && (
                     <div className="space-y-6">
                       <SectionHead icon={DollarSign} title="Financial Configuration" subtitle="How billing works with this client" />
-
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <div className="space-y-1.5">
                           <Label>Default Currency</Label>
@@ -461,8 +419,6 @@ export default function ClientsPage() {
                           <Input value={form.accountManager} onChange={e => set('accountManager')(e.target.value)} placeholder="Team member name" />
                         </div>
                       </div>
-
-                      {/* VAT Toggle */}
                       <div className="flex items-center justify-between p-4 rounded-xl border bg-muted/30">
                         <div className="flex items-center gap-3">
                           <div className="w-9 h-9 rounded-xl bg-amber-500/10 flex items-center justify-center text-amber-600 flex-shrink-0">
@@ -475,11 +431,9 @@ export default function ClientsPage() {
                         </div>
                         <Switch checked={!!form.vatEnabled} onCheckedChange={set('vatEnabled')} />
                       </div>
-
                       <Separator />
                       <SectionHead icon={Tag} title="Segmentation Tags" subtitle="Label this client for quick filtering" />
                       <TagChips value={form.tags ?? ''} onChange={set('tags')} />
-
                       <Separator />
                       <SectionHead icon={Building2} title="Client Vision & Notes" subtitle="Internal context about this partnership" />
                       <Textarea rows={4} value={form.notes} onChange={e => set('notes')(e.target.value)}
@@ -487,11 +441,9 @@ export default function ClientsPage() {
                     </div>
                   )}
 
-                  {/* ── STEP 3: Digital Properties ─────────────────────── */}
                   {step === 3 && (
                     <div className="space-y-6">
                       <SectionHead icon={Globe} title="Digital Properties" subtitle="Add websites and domains for this client" />
-
                       {siteEntries.length === 0 ? (
                         <div className="flex flex-col items-center justify-center py-12 border-2 border-dashed rounded-2xl text-muted-foreground gap-3 bg-muted/10">
                           <Globe size={34} className="opacity-20" />
@@ -502,17 +454,14 @@ export default function ClientsPage() {
                         <div className="space-y-4">
                           {siteEntries.map((site, idx) => (
                             <div key={idx} className="p-4 rounded-2xl border bg-muted/20 space-y-3 relative group">
-                              {/* Remove button */}
                               <button type="button" onClick={() => removeSite(idx)}
                                 className="absolute top-3 right-3 p-1.5 rounded-lg text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-all opacity-0 group-hover:opacity-100">
                                 <XIcon size={14} />
                               </button>
-
                               <div className="flex items-center gap-2 mb-1">
                                 <Globe size={14} className="text-primary" />
                                 <span className="text-xs font-bold text-primary uppercase tracking-wider">Site {idx + 1}</span>
                               </div>
-
                               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                                 <div className="space-y-1.5 sm:col-span-2">
                                   <Label>Domain Name <span className="text-destructive">*</span></Label>
@@ -560,17 +509,14 @@ export default function ClientsPage() {
                           ))}
                         </div>
                       )}
-
                       <button type="button" onClick={() => setSiteEntries(prev => [...prev, blankSite()])}
                         className="w-full py-3 rounded-2xl border-2 border-dashed border-primary/30 text-primary/70 text-xs font-black uppercase tracking-widest hover:border-primary hover:text-primary hover:bg-primary/5 transition-all flex items-center justify-center gap-2">
                         <Plus size={16} /> Add Digital Property
                       </button>
-
                       <div className="p-3 rounded-xl bg-muted/30 border text-xs text-muted-foreground flex items-start gap-2">
                         <Globe size={14} className="text-primary mt-0.5 flex-shrink-0" />
                         Sites are saved immediately after the client is created and will appear in their profile and the renewals tracker.
                       </div>
-
                       {siteEntries.length === 0 && (
                         <p className="text-center text-xs text-muted-foreground italic py-1">
                           You can also skip this step — sites can be added later from the client profile.
@@ -580,26 +526,28 @@ export default function ClientsPage() {
                   )}
                 </div>
 
-                {/* ── Footer ────────────────────────────────────────────── */}
+                {/* Footer — all buttons are type="button", no submit button exists */}
                 <div className="px-6 py-4 border-t bg-muted/20 flex items-center justify-between gap-3">
                   {step === 1 ? (
                     <Button type="button" variant="outline" onClick={() => setIsAddOpen(false)}>Cancel</Button>
                   ) : (
-                    <Button type="button" variant="outline" onClick={() => setStep(s => (s - 1) as 1 | 2 | 3)} className="gap-2">
+                    <Button type="button" variant="outline" onClick={() => setStep((step - 1) as 1 | 2 | 3)} className="gap-2">
                       <ChevronLeft size={16} /> Back
                     </Button>
                   )}
-
                   {step < 3 ? (
                     <Button type="button"
                       className="gap-2 bg-primary text-primary-foreground"
                       disabled={step === 1 && (!form.name || !form.businessName)}
-                      onClick={() => setStep(s => (s + 1) as 1 | 2 | 3)}>
+                      onClick={() => setStep((step + 1) as 1 | 2 | 3)}>
                       {step === 1 ? 'Next: Business Setup' : 'Next: Digital Properties'}
                       <ChevronRight size={16} />
                     </Button>
                   ) : (
-                    <Button type="submit" className="gap-2 bg-primary text-primary-foreground">
+                    <Button
+                      type="button"
+                      onClick={() => handleAddClient()}
+                      className="gap-2 bg-primary text-primary-foreground">
                       <Check size={16} />
                       Initialize Partnership
                       {siteEntries.filter(s => s.domainName).length > 0 &&
@@ -612,7 +560,6 @@ export default function ClientsPage() {
           </Dialog>
         </div>
 
-        {/* ── Search + Filter ───────────────────────────────────────────── */}
         <div className="flex flex-col sm:flex-row gap-3">
           <div className="relative flex-1 max-w-xl group">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground group-focus-within:text-primary transition-colors" size={18} />
@@ -634,7 +581,6 @@ export default function ClientsPage() {
           </div>
         </div>
 
-        {/* ── Client Grid ───────────────────────────────────────────────── */}
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
           {filteredClients.map((client) => {
             const stats      = getClientStats(client.id);
@@ -673,7 +619,6 @@ export default function ClientsPage() {
                     </div>
                   )}
                 </div>
-
                 <CardContent className="p-4">
                   <div className="flex items-center justify-between mb-3">
                     <div className="flex items-center gap-2.5">
@@ -687,7 +632,6 @@ export default function ClientsPage() {
                     </div>
                     <ArrowRight size={16} className="text-muted-foreground group-hover:text-primary group-hover:translate-x-1 transition-all" />
                   </div>
-
                   {tags.length > 0 && (
                     <div className="flex flex-wrap gap-1 mb-3">
                       {tags.slice(0, 3).map(tag => (
@@ -695,7 +639,6 @@ export default function ClientsPage() {
                       ))}
                     </div>
                   )}
-
                   <div className="grid grid-cols-3 gap-3 pt-3 border-t">
                     <div className="text-center">
                       <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Sites</p>
@@ -714,7 +657,6 @@ export default function ClientsPage() {
               </Card>
             );
           })}
-
           {filteredClients.length === 0 && (
             <div className="col-span-full flex flex-col items-center justify-center py-20 text-muted-foreground border-2 border-dashed rounded-2xl">
               <Users size={40} className="opacity-20 mb-3" />
@@ -725,7 +667,6 @@ export default function ClientsPage() {
         </div>
       </div>
 
-      {/* ── Client Detail Sheet ──────────────────────────────────────────── */}
       <Sheet open={!!selectedClient} onOpenChange={(o) => {
         if (!o) { setSelectedClient(null); setIsEditing(false); setLogoPreview(null); }
       }}>
@@ -784,7 +725,6 @@ export default function ClientsPage() {
                       <input type="file" ref={editFileRef} className="hidden" accept="image/*" onChange={e => handleFile(e, 'edit')} />
                       <div><p className="text-sm font-semibold">Update Logo</p><p className="text-xs text-muted-foreground">Square image, max 1 MB</p></div>
                     </div>
-
                     <div className="grid grid-cols-2 gap-4">
                       <div className="space-y-1.5"><Label>Business Name</Label><Input required value={editData.businessName} onChange={e => setE('businessName')(e.target.value)} /></div>
                       <div className="space-y-1.5"><Label>Business Type</Label>
@@ -845,22 +785,18 @@ export default function ClientsPage() {
                       </div>
                       <div className="space-y-1.5"><Label>Account Manager</Label><Input value={editData.accountManager} onChange={e => setE('accountManager')(e.target.value)} /></div>
                     </div>
-
                     <div className="flex items-center justify-between p-3 rounded-xl border bg-muted/30">
                       <div><p className="text-sm font-semibold">Ghana VAT (15%)</p><p className="text-xs text-muted-foreground">Applied to all invoices</p></div>
                       <Switch checked={!!editData.vatEnabled} onCheckedChange={setE('vatEnabled')} />
                     </div>
-
                     <div className="space-y-1.5">
                       <Label>Tags</Label>
                       <TagChips value={editData.tags ?? ''} onChange={setE('tags')} />
                     </div>
-
                     <div className="space-y-1.5">
                       <Label>Notes</Label>
                       <Textarea rows={3} value={editData.notes} onChange={e => setE('notes')(e.target.value)} className="resize-none" />
                     </div>
-
                     <div className="flex gap-3 pt-2">
                       <Button type="submit" className="flex-1 gap-2"><Check size={16} />Save Changes</Button>
                       <Button type="button" variant="outline" className="flex-1" onClick={() => setIsEditing(false)}>Cancel</Button>
@@ -889,9 +825,7 @@ export default function ClientsPage() {
                         ))}
                       </div>
                     </div>
-
                     <Separator />
-
                     <div>
                       <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-3">Financial</p>
                       <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
@@ -912,7 +846,6 @@ export default function ClientsPage() {
                         ))}
                       </div>
                     </div>
-
                     {selectedClient.tags && (
                       <>
                         <Separator />
@@ -926,7 +859,6 @@ export default function ClientsPage() {
                         </div>
                       </>
                     )}
-
                     <Separator />
                     <div>
                       <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-3">
@@ -952,7 +884,6 @@ export default function ClientsPage() {
                         )}
                       </div>
                     </div>
-
                     {selectedClient.notes && (
                       <>
                         <Separator />
@@ -964,7 +895,6 @@ export default function ClientsPage() {
                         </div>
                       </>
                     )}
-
                     <div className="pt-3 border-t flex items-center justify-between text-[10px] font-bold text-muted-foreground uppercase tracking-widest">
                       <span>Client Since {new Date(selectedClient.createdAt).toLocaleDateString()}</span>
                       <span className="truncate max-w-[160px]">ID: {selectedClient.id}</span>
