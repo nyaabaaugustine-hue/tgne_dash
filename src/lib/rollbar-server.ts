@@ -1,17 +1,17 @@
 /**
  * src/lib/rollbar-server.ts
- * Lightweight helper to grab the global Rollbar instance that instrumentation.ts
- * registered, and fall back gracefully when it isn't available (e.g. Edge runtime,
- * or when the env var is absent).
+ * Lightweight helper that returns the global Rollbar instance when available,
+ * or null when not (Edge runtime, missing env var, etc.).
  *
- * Usage in any API route:
- *   import { serverRollbar } from '@/lib/rollbar-server';
- *   serverRollbar()?.error(err);
+ * Uses InstanceType<typeof import('rollbar')> so TypeScript gets a proper
+ * instance type without treating the module itself as the type.
  */
 
-export function serverRollbar(): import('rollbar') | null {
+type RollbarInstance = InstanceType<typeof import('rollbar')>;
+
+export function serverRollbar(): RollbarInstance | null {
   try {
-    return (global as any).__rollbar ?? null;
+    return ((global as Record<string, unknown>).__rollbar as RollbarInstance) ?? null;
   } catch {
     return null;
   }
