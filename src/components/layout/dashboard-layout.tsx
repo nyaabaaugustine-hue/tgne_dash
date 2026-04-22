@@ -23,6 +23,7 @@ import {
   Shield,
   Mail,
   Loader2,
+  Settings2,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
@@ -40,6 +41,7 @@ const navItems = [
   { name: 'Reminders',   href: '/reminders',   icon: Bell },
   { name: 'Schedule',    href: '/schedule',    icon: CalendarDays },
   { name: 'Audit Log',   href: '/audit',       icon: Shield },
+  { name: 'Settings',    href: '/settings',   icon: Settings2 },
 ];
 
 export function DashboardLayout({ children }: { children: React.ReactNode }) {
