@@ -180,8 +180,8 @@ export async function sendDueDateAlert(alerts: DueAlert[]): Promise<SendResult> 
 
   const overdueCount = alerts.filter(a => a.daysLeft < 0).length;
   const subject = overdueCount > 0
-    ? `⚡ ${overdueCount} OVERDUE + ${alerts.length - overdueCount} upcoming — TGNE Daily Alert`
-    : `🔔 ${alerts.length} item${alerts.length !== 1 ? 's' : ''} due soon — TGNE Daily Alert`;
+    ? `[TGNE] ${overdueCount} OVERDUE + ${alerts.length - overdueCount} upcoming items`
+    : `[TGNE] ${alerts.length} item${alerts.length !== 1 ? 's' : ''} due soon`;
 
   // Brevo transactional email payload
   // https://developers.brevo.com/reference/sendtransacemail
