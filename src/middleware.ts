@@ -151,6 +151,13 @@ export async function middleware(req: NextRequest): Promise<NextResponse> {
 }
 
 export const config = {
-  // Apply to all /api/* routes
-  matcher: '/api/:path*',
+  /*
+   * Protect all /api/* routes EXCEPT:
+   *   /api/auth/*    — login, logout, session-check (have their own auth)
+   *   /api/data      — fetched on every page load; protected by client-side
+   *                    isAuthorized check. Excluding it here lets TanStack
+   *                    Query re-fetch immediately after login without needing
+   *                    a full page reload.
+   */
+  matcher: ['/api/((?!auth/|data(?:/|$)).*)'],
 };

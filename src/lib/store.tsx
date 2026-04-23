@@ -109,16 +109,19 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     return localStorage.getItem('tgne_auth_session') === 'true';
   });
 
-  // Re-validate session on mount by pinging a protected endpoint
+  // On mount, silently re-validate the session cookie against the server.
+  // Uses /api/auth/verify-pin with GET (not POST) — just a session check.
+  // If the cookie has expired, clear local auth state so the login page shows.
   React.useEffect(() => {
-    fetch('/api/clients', { method: 'GET' })
+    fetch('/api/auth/session-check')
       .then(r => {
         if (r.status === 401) {
           setIsAuthorized(false);
           localStorage.removeItem('tgne_auth_session');
         }
+        // 200 = valid session, keep isAuthorized as-is
       })
-      .catch(() => { /* network error — keep local state */ });
+      .catch(() => { /* network error — keep local state, fail open */ });
   }, []);
 
   const [savingState, setSavingState] = React.useState<SavingState>(null);

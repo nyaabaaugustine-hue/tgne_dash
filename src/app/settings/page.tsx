@@ -140,9 +140,9 @@ export default function SettingsPage() {
               </p>
               <div className="space-y-2">
                 <div className="flex items-start gap-3 p-3 rounded-lg bg-background border">
-                  <code className="text-xs font-mono text-amber-500 whitespace-nowrap pt-0.5">NEXT_PUBLIC_ADMIN_PIN</code>
+                  <code className="text-xs font-mono text-amber-500 whitespace-nowrap pt-0.5">ADMIN_PIN</code>
                   <span className="text-xs text-muted-foreground">
-                    The admin dashboard PIN. Change from the default and set in Vercel Dashboard env vars too.
+                    Server-only admin PIN (never exposed to the browser). Set this in Vercel Dashboard env vars and change it from the default <code className="text-primary">1234567a</code>.
                   </span>
                 </div>
                 <div className="flex items-start gap-3 p-3 rounded-lg bg-background border">
