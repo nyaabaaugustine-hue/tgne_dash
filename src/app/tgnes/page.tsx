@@ -152,14 +152,10 @@ export default function AdminPinPage() {
     setIsVerifying(true);
     setError(false);
 
-    // Brief delay for the unlocking animation to play
-    await new Promise(r => setTimeout(r, 900));
-
     if (await verifyPin(pin)) {
       setIsSuccess(true);
       setIsVerifying(false);
-      // Navigate after unlock animation completes
-      setTimeout(() => router.push('/'), 1000);
+      setTimeout(() => router.push('/'), 800);
     } else {
       setError(true);
       setPin('');

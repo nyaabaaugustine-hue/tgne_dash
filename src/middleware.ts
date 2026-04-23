@@ -1,63 +1,39 @@
 /**
  * src/middleware.ts
- * Next.js Edge Middleware — runs before every matched request.
  *
- * Responsibilities:
- *   1. Rate limiting  — 60 req/min per IP on all /api/ routes
- *                       5  req/min per IP on /api/auth/ (brute-force protection)
- *   2. Session check  — POST / PUT / DELETE to /api/ require a valid session cookie
- *                       GET requests are also protected (data is sensitive)
+ * Protects all /api/* routes except:
+ *   /api/auth/*        — login endpoints (have their own auth)
+ *   /api/data          — read-only data fetch; excluded so TanStack Query
+ *                        can re-fetch immediately after login
+ *   /api/cron/*        — secured via Bearer CRON_SECRET header
  *
- * Routes that bypass session check (they use their own auth):
- *   /api/auth/*  — login / logout
- *   /api/cron/*  — uses Bearer CRON_SECRET header
- *
- * ⚠️  Rate-limit state is in-memory (Map). On Vercel Hobby (single region) this
- *     is fine. On Pro with multiple regions, state is not shared across instances —
- *     the protection is per-instance. For shared-state rate limiting, swap the
- *     Map for @upstash/ratelimit + Redis.
+ * Session check: reads the tgne_session cookie set by /api/auth/verify-pin.
+ * If absent or wrong value, returns 401.
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { SESSION_COOKIE, verifySessionToken } from '@/lib/session';
 
-// ─── Rate limiting ────────────────────────────────────────────────────────────
+// ─── Rate limiting (in-memory, per-instance) ──────────────────────────────────
 
-interface RateRecord {
-  count:   number;
-  resetAt: number;
-}
+interface RateRecord { count: number; resetAt: number; }
 
-const ipMap    = new Map<string, RateRecord>(); // general API
-const authMap  = new Map<string, RateRecord>(); // auth route (tighter limit)
+const ipMap   = new Map<string, RateRecord>();
+const authMap = new Map<string, RateRecord>();
 
-const WINDOW_MS      = 60_000; // 1 minute
-const MAX_GENERAL    = 120;    // req/min for normal API calls
-const MAX_AUTH       = 10;     // req/min for login attempts
-// Alert after this many hits before the hard limit (fire-and-forget)
-const ALERT_THRESHOLD = 80;
+const WINDOW_MS   = 60_000;
+const MAX_GENERAL = 120;
+const MAX_AUTH    = 10;
 
-function checkRateLimit(
-  map: Map<string, RateRecord>,
-  key: string,
-  max: number
-): { allowed: boolean; remaining: number; hitAlert: boolean } {
+function rateCheck(map: Map<string, RateRecord>, key: string, max: number): boolean {
   const now = Date.now();
   let rec   = map.get(key);
-
   if (!rec || now > rec.resetAt) {
-    rec = { count: 1, resetAt: now + WINDOW_MS };
-    map.set(key, rec);
-    return { allowed: true, remaining: max - 1, hitAlert: false };
+    map.set(key, { count: 1, resetAt: now + WINDOW_MS });
+    return true;
   }
-
   rec.count++;
-  const remaining = Math.max(0, max - rec.count);
-  const hitAlert  = rec.count === ALERT_THRESHOLD;
-  return { allowed: rec.count <= max, remaining, hitAlert };
+  return rec.count <= max;
 }
-
-// ─── Helpers ──────────────────────────────────────────────────────────────────
 
 function getIp(req: NextRequest): string {
   return (
@@ -67,97 +43,48 @@ function getIp(req: NextRequest): string {
   );
 }
 
-function rateLimitResponse(ip: string, path: string): NextResponse {
-  // Fire Slack alert in background — don't await, don't block
-  const webhook = process.env.SLACK_WEBHOOK_URL;
-  if (webhook) {
-    fetch(webhook, {
-      method:  'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body:    JSON.stringify({
-        text: `⚡ *Rate limit hit* — IP \`${ip}\` on \`${path}\` at ${new Date().toISOString()}`,
-      }),
-    }).catch(() => { /* never crash on Slack failure */ });
-  }
-
-  return NextResponse.json(
-    { error: 'Too many requests — please slow down.' },
-    {
-      status:  429,
-      headers: {
-        'Retry-After':          '60',
-        'X-RateLimit-Limit':    String(MAX_GENERAL),
-        'X-RateLimit-Remaining':'0',
-      },
-    }
-  );
-}
-
 // ─── Middleware ───────────────────────────────────────────────────────────────
 
-export async function middleware(req: NextRequest): Promise<NextResponse> {
+export function middleware(req: NextRequest): NextResponse {
   const { pathname } = req.nextUrl;
   const ip           = getIp(req);
-  const isAuth       = pathname.startsWith('/api/auth/');
-  const isCron       = pathname.startsWith('/api/cron/');
 
-  // ── 1. Rate limiting ──────────────────────────────────────────────────────
+  const isAuth = pathname.startsWith('/api/auth/');
+  const isCron = pathname.startsWith('/api/cron/');
+
+  // Rate limiting
   if (isAuth) {
-    const rl = checkRateLimit(authMap, ip, MAX_AUTH);
-    if (!rl.allowed) return rateLimitResponse(ip, pathname);
+    if (!rateCheck(authMap, ip, MAX_AUTH)) {
+      return NextResponse.json({ error: 'Too many requests' }, { status: 429 });
+    }
   } else {
-    const rl = checkRateLimit(ipMap, ip, MAX_GENERAL);
-    if (!rl.allowed) return rateLimitResponse(ip, pathname);
-
-    // Fire a warning alert when approaching the limit (non-blocking)
-    if (rl.hitAlert) {
-      const webhook = process.env.SLACK_WEBHOOK_URL;
-      if (webhook) {
-        fetch(webhook, {
-          method:  'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body:    JSON.stringify({
-            text: `⚠️ *High request rate* — IP \`${ip}\` at ${ALERT_THRESHOLD} req/min on \`${pathname}\``,
-          }),
-        }).catch(() => {});
-      }
+    if (!rateCheck(ipMap, ip, MAX_GENERAL)) {
+      return NextResponse.json({ error: 'Too many requests' }, { status: 429 });
     }
   }
 
-  // ── 2. Session check (skip auth + cron routes) ────────────────────────────
-  if (!isAuth && !isCron) {
-    const token  = req.cookies.get(SESSION_COOKIE)?.value;
-    const secret = process.env.SESSION_SECRET ?? process.env.ENCRYPTION_KEY ?? '';
-
-    if (!secret) {
-      // Misconfiguration — log to console (Edge can't use Winston)
-      console.error('[middleware] SESSION_SECRET / ENCRYPTION_KEY env var is missing');
-    }
-
-    const payload = token && secret ? await verifySessionToken(token, secret) : null;
-
-    if (!payload) {
-      return NextResponse.json(
-        { error: 'Unauthorized — please log in.' },
-        { status: 401 }
-      );
-    }
+  // Auth routes and cron routes skip session check
+  if (isAuth || isCron) {
+    return NextResponse.next();
   }
 
-  // ── 3. Pass through — add rate-limit headers ──────────────────────────────
-  const res = NextResponse.next();
-  res.headers.set('X-RateLimit-Limit',     String(MAX_GENERAL));
-  return res;
+  // Session check — read the simple cookie set by verify-pin
+  const session = req.cookies.get('tgne_session')?.value;
+  if (session !== 'authenticated') {
+    return NextResponse.json(
+      { error: 'Unauthorized — please log in.' },
+      { status: 401 }
+    );
+  }
+
+  return NextResponse.next();
 }
 
 export const config = {
   /*
-   * Protect all /api/* routes EXCEPT:
-   *   /api/auth/*    — login, logout, session-check (have their own auth)
-   *   /api/data      — fetched on every page load; protected by client-side
-   *                    isAuthorized check. Excluding it here lets TanStack
-   *                    Query re-fetch immediately after login without needing
-   *                    a full page reload.
+   * Match all /api/* routes EXCEPT:
+   *   /api/auth/*   — whitelisted above in the handler
+   *   /api/data     — excluded here so it's never blocked on first load
    */
-  matcher: ['/api/((?!auth/|data(?:/|$)).*)'],
+  matcher: ['/api/((?!auth/|data(?:/|$)).*)',],
 };
